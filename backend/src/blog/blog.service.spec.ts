@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BlogService } from './blog.service';
 import { PrismaService } from '../prisma.service';
-import { OllamaChatService } from '../ai-analytics/ollama-chat.service';
+import { AiService } from '../ai/ai.service';
 
 describe('BlogService', () => {
     let service: BlogService;
@@ -26,8 +26,9 @@ describe('BlogService', () => {
         },
     };
 
-    const mockOllamaChat = {
-        chat: jest.fn().mockResolvedValue({ response: 'AI generated content' }),
+    const mockAiService = {
+        generateContent: jest.fn().mockResolvedValue('AI generated content'),
+        generateDescription: jest.fn().mockResolvedValue('AI generated description'),
     };
 
     beforeEach(async () => {
@@ -39,8 +40,8 @@ describe('BlogService', () => {
                     useValue: mockPrisma,
                 },
                 {
-                    provide: OllamaChatService,
-                    useValue: mockOllamaChat,
+                    provide: AiService,
+                    useValue: mockAiService,
                 },
             ],
         }).compile();
@@ -139,7 +140,7 @@ describe('BlogService', () => {
 
             const result = await service.generateProductArticle('p1');
 
-            expect(mockOllamaChat.chat).toHaveBeenCalled();
+            expect(mockAiService.generateContent).toHaveBeenCalled();
             expect(mockPrisma.blogPost.create).toHaveBeenCalled();
         });
     });

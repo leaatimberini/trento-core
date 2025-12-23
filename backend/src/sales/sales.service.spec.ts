@@ -3,6 +3,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SalesService } from './sales.service';
 import { PrismaService } from '../prisma.service';
 import { InventoryService } from '../inventory/inventory.service';
+import { FiscalService } from '../fiscal/fiscal.service';
+import { PromotionService } from './promotion.service';
+import { MercadoPagoService } from '../integrations/payments/mercadopago.service';
+import { PriceListService } from '../pricing/price-list.service';
+import { PdfGeneratorService } from '../wholesale/pdf-generator.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 describe('SalesService', () => {
@@ -19,6 +24,7 @@ describe('SalesService', () => {
         },
         product: {
             findUnique: jest.fn(),
+            findMany: jest.fn(),
         },
         customer: {
             findUnique: jest.fn(),
@@ -32,6 +38,31 @@ describe('SalesService', () => {
         restoreStock: jest.fn(),
     };
 
+    const mockFiscalService = {
+        createInvoice: jest.fn(),
+        getNextInvoiceNumber: jest.fn(),
+    };
+
+    const mockPromotionService = {
+        applyPromotions: jest.fn().mockReturnValue({ discount: 0, appliedPromotions: [] }),
+        getActivePromotions: jest.fn().mockReturnValue([]),
+    };
+
+    const mockMercadoPagoService = {
+        createPreference: jest.fn(),
+        processPayment: jest.fn(),
+    };
+
+    const mockPriceListService = {
+        getPriceForCustomer: jest.fn(),
+        getActiveList: jest.fn(),
+    };
+
+    const mockPdfGeneratorService = {
+        generateSalePdf: jest.fn(),
+        generateInvoicePdf: jest.fn(),
+    };
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -43,6 +74,26 @@ describe('SalesService', () => {
                 {
                     provide: InventoryService,
                     useValue: mockInventoryService,
+                },
+                {
+                    provide: FiscalService,
+                    useValue: mockFiscalService,
+                },
+                {
+                    provide: PromotionService,
+                    useValue: mockPromotionService,
+                },
+                {
+                    provide: MercadoPagoService,
+                    useValue: mockMercadoPagoService,
+                },
+                {
+                    provide: PriceListService,
+                    useValue: mockPriceListService,
+                },
+                {
+                    provide: PdfGeneratorService,
+                    useValue: mockPdfGeneratorService,
                 },
             ],
         }).compile();
@@ -65,17 +116,19 @@ describe('SalesService', () => {
                 paymentMethod: 'CASH',
             };
 
-            mockPrisma.product.findUnique.mockResolvedValue({
+            const product = {
                 id: 'p1',
                 basePrice: 100,
                 wholesalePrice: 80
-            });
+            };
+            mockPrisma.product.findUnique.mockResolvedValue(product);
+            mockPrisma.product.findMany.mockResolvedValue([product]);
             mockPrisma.sale.create.mockResolvedValue({ id: 's1', code: 'SALE-123' });
 
             await service.createTransaction(dto as any);
 
             expect(mockPrisma.sale.create).toHaveBeenCalled();
-            expect(inventoryService.deductStock).toHaveBeenCalledWith('p1', 2, mockPrisma);
+            expect(inventoryService.deductStock).toHaveBeenCalledWith('p1', 2, undefined, mockPrisma);
         });
 
         it('should use wholesale price if customer is WHOLESALE', async () => {
@@ -85,15 +138,17 @@ describe('SalesService', () => {
                 customerId: 'c1'
             };
 
+            const product = {
+                id: 'p1',
+                basePrice: 100,
+                wholesalePrice: 80
+            };
             mockPrisma.customer.findUnique.mockResolvedValue({
                 id: 'c1',
                 type: 'WHOLESALE'
             });
-            mockPrisma.product.findUnique.mockResolvedValue({
-                id: 'p1',
-                basePrice: 100,
-                wholesalePrice: 80
-            });
+            mockPrisma.product.findUnique.mockResolvedValue(product);
+            mockPrisma.product.findMany.mockResolvedValue([product]);
 
             await service.createTransaction(dto as any);
 
@@ -118,7 +173,7 @@ describe('SalesService', () => {
             expect(inventoryService.restoreStock).toHaveBeenCalledWith('p1', 2);
             expect(mockPrisma.sale.update).toHaveBeenCalledWith({
                 where: { id: 's1' },
-                data: { status: 'REFUNDED' }
+                data: { status: 'CANCELLED' }
             });
         });
 

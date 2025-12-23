@@ -35,10 +35,36 @@ export class AiService {
      * Process natural language query (Rule-Based V1)
      */
     /**
-     * Process natural language query (Hybrid: Rule-Based for Data + Gemini for Chat)
+     * Process natural language query (Hybrid: Rule-Based for Data + Groq for Chat)
      */
     async processQuery(query: string) {
         const lower = query.toLowerCase();
+
+        // 0. Intent: LOW STOCK (before generic stock search)
+        if (lower.match(/stock\s+bajo|bajo\s+stock|sin\s+stock|productos?\s+(con\s+)?poco|falta(n)?\s+productos?|qu[eé]\s+(me\s+)?falta/)) {
+            // Get products with their total inventory
+            const productsWithStock = await this.prisma.$queryRaw<Array<{ name: string, total_stock: bigint }>>`
+                SELECT p.name, COALESCE(SUM(i.quantity), 0) as total_stock
+                FROM "Product" p
+                LEFT JOIN "InventoryItem" i ON p.id = i."productId"
+                GROUP BY p.id, p.name
+                HAVING COALESCE(SUM(i.quantity), 0) <= 10
+                ORDER BY total_stock ASC
+                LIMIT 10
+            `;
+
+            if (productsWithStock.length === 0) {
+                return { text: '✅ ¡Excelente! No tenés productos con stock bajo en este momento.' };
+            }
+
+            const responses = productsWithStock.map(p => {
+                const stock = Number(p.total_stock);
+                return `- **${p.name}**: ${stock} unidades ${stock === 0 ? '🔴' : '🟡'}`;
+            });
+            return {
+                text: `📦 **Productos con Stock Bajo:**\n\n${responses.join('\n')}\n\n_Mostrando productos con 10 unidades o menos_`
+            };
+        }
 
         // 1. Intent: STOCK (High Precision Rule)
         if (lower.match(/stock|cantidad|cuant(o|a)s hay/)) {

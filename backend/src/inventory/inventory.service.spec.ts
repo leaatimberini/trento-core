@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { InventoryService } from './inventory.service';
 import { PrismaService } from '../prisma.service';
 import { EmailService } from '../notifications/email.service';
+import { BotService } from '../bot/bot.service';
 import { BadRequestException } from '@nestjs/common';
 
 describe('InventoryService', () => {
@@ -25,11 +26,20 @@ describe('InventoryService', () => {
             findUnique: jest.fn(),
             findMany: jest.fn(),
         },
+        warehouse: {
+            findFirst: jest.fn().mockResolvedValue({ id: 'warehouse-1', name: 'Main', type: 'DEPOT' }),
+            create: jest.fn().mockResolvedValue({ id: 'warehouse-1', name: 'Depósito Central', type: 'DEPOT' }),
+        },
         $transaction: jest.fn((cb) => cb(mockPrisma)),
     };
 
     const mockEmailService = {
         sendLowStockAlert: jest.fn(),
+    };
+
+    const mockBotService = {
+        sendAdminNotification: jest.fn(),
+        sendAlert: jest.fn(),
     };
 
     beforeEach(async () => {
@@ -43,6 +53,10 @@ describe('InventoryService', () => {
                 {
                     provide: EmailService,
                     useValue: mockEmailService,
+                },
+                {
+                    provide: BotService,
+                    useValue: mockBotService,
                 },
             ],
         }).compile();
