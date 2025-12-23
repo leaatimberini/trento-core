@@ -97,11 +97,17 @@ export class BotService implements OnModuleInit {
             ctx.reply(`💰 *Ventas de Hoy*\nCantidad de Oros: ${count}\n(Detalle completo próximamente)`);
         });
 
-        // Default: AI Chat
+        // Default: AI Chat (with quotation creation detection)
         this.bot.on('text', async (ctx) => {
             const query = ctx.message.text;
 
-            // Use existing AI Service
+            // Check if this is a quotation creation request
+            if (this.aiService.isQuotationRequest(query)) {
+                await this.handleQuotationCreation(ctx, query);
+                return;
+            }
+
+            // Use existing AI Service for general chat
             const aiResponse = await this.aiService.processQuery(query);
 
             if (aiResponse.text) {
@@ -154,5 +160,187 @@ export class BotService implements OnModuleInit {
         } catch (error) {
             console.error('Error sending alert broadcast', error);
         }
+    }
+
+    /**
+     * Handle quotation creation from natural language
+     */
+    private async handleQuotationCreation(ctx: Context, query: string) {
+        try {
+            await ctx.reply('⏳ Procesando tu pedido...');
+
+            // 1. Parse the request using AI
+            const parsed = await this.aiService.parseQuotationRequest(query);
+
+            if (!parsed.success || !parsed.customerName || !parsed.items) {
+                await ctx.reply(`❌ ${parsed.error || 'No pude interpretar el pedido'}.\n\nEjemplo: "Crea presupuesto para SUCHT: 1 coca cola, 2 fernet branca"`);
+                return;
+            }
+
+            // 2. Find the customer
+            const customer = await this.prisma.customer.findFirst({
+                where: {
+                    OR: [
+                        { name: { contains: parsed.customerName, mode: 'insensitive' } },
+                        { businessName: { contains: parsed.customerName, mode: 'insensitive' } }
+                    ]
+                }
+            });
+
+            if (!customer) {
+                await ctx.reply(`❌ No encontré un cliente con nombre "${parsed.customerName}".\n\nVerificá el nombre e intentá de nuevo.`);
+                return;
+            }
+
+            // 3. Find products and build items
+            const quotationItems: { productId: string; quantity: number; unitPrice: number; productName: string }[] = [];
+            const notFound: string[] = [];
+            const ambiguous: { searchTerm: string; options: string[] }[] = [];
+
+            for (const item of parsed.items) {
+                const products = await this.productsService.findByName(item.productName);
+
+                if (products.length === 0) {
+                    notFound.push(item.productName);
+                    continue;
+                }
+
+                // Check for exact match first (case insensitive)
+                const exactMatch = products.find(p =>
+                    p.name.toLowerCase() === item.productName.toLowerCase()
+                );
+
+                if (exactMatch) {
+                    quotationItems.push({
+                        productId: exactMatch.id,
+                        quantity: item.quantity || 1,
+                        unitPrice: Number(exactMatch.basePrice),
+                        productName: exactMatch.name
+                    });
+                    continue;
+                }
+
+                // If multiple similar products, check if one is clearly the best match
+                if (products.length === 1) {
+                    quotationItems.push({
+                        productId: products[0].id,
+                        quantity: item.quantity || 1,
+                        unitPrice: Number(products[0].basePrice),
+                        productName: products[0].name
+                    });
+                } else if (products.length <= 5) {
+                    // Multiple options - add to ambiguous list
+                    ambiguous.push({
+                        searchTerm: item.productName,
+                        options: products.slice(0, 5).map(p => p.name)
+                    });
+                    // Still add the first one as best guess
+                    quotationItems.push({
+                        productId: products[0].id,
+                        quantity: item.quantity || 1,
+                        unitPrice: Number(products[0].basePrice),
+                        productName: products[0].name
+                    });
+                } else {
+                    // Too many matches, take first
+                    quotationItems.push({
+                        productId: products[0].id,
+                        quantity: item.quantity || 1,
+                        unitPrice: Number(products[0].basePrice),
+                        productName: products[0].name
+                    });
+                }
+            }
+
+            if (quotationItems.length === 0) {
+                await ctx.reply(`❌ No encontré ningún producto.\n\nProductos buscados: ${parsed.items.map(i => i.productName).join(', ')}`);
+                return;
+            }
+
+            // 4. Create the quotation
+            const code = await this.generateQuotationCode();
+            const validUntil = new Date();
+            validUntil.setDate(validUntil.getDate() + 15);
+
+            const subtotal = quotationItems.reduce((sum, i) => sum + (i.unitPrice * i.quantity), 0);
+            const taxAmount = 0; // Sin IVA por defecto
+            const total = subtotal; // Total = subtotal (sin IVA)
+
+            const quotation = await this.prisma.quotation.create({
+                data: {
+                    code,
+                    customerId: customer.id,
+                    status: 'DRAFT',
+                    validUntil,
+                    subtotal,
+                    taxAmount,
+                    total,
+                    items: {
+                        create: quotationItems.map(item => ({
+                            productId: item.productId,
+                            productName: item.productName,
+                            quantity: item.quantity,
+                            unitPrice: item.unitPrice,
+                            discount: 0,
+                            totalPrice: item.unitPrice * item.quantity
+                        }))
+                    }
+                }
+            });
+
+            // 5. Build response message
+            let message = `✅ *Presupuesto ${code} creado*\n\n`;
+            message += `👤 Cliente: *${customer.businessName || customer.name}*\n\n`;
+            message += `📦 *Items:*\n`;
+
+            for (const item of quotationItems) {
+                message += `  • ${item.quantity}x ${item.productName}: $${(item.unitPrice * item.quantity).toLocaleString()}\n`;
+            }
+
+            message += `\n💰 *Total:* $${total.toLocaleString()}\n`;
+            message += `_(Sin IVA - agregar si corresponde)_\n`;
+
+            if (notFound.length > 0) {
+                message += `\n⚠️ No encontré: ${notFound.join(', ')}`;
+            }
+
+            if (ambiguous.length > 0) {
+                message += `\n\n💡 *Nota:* Encontré varios productos similares.\nUsé el primero, pero podés ser más específico:\n`;
+                for (const amb of ambiguous) {
+                    message += `  "${amb.searchTerm}" → Opciones: ${amb.options.join(', ')}\n`;
+                }
+            }
+
+            // Get the base URL from environment or use default
+            const baseUrl = process.env.APP_URL || 'http://54.233.198.194';
+            message += `\n\n📄 [Descargar PDF](${baseUrl}/api/wholesale/pdf/quotation/${quotation.id}/download)`;
+
+            await ctx.replyWithMarkdown(message);
+
+        } catch (error) {
+            console.error('Quotation Creation Error:', error);
+            await ctx.reply('❌ Hubo un error al crear el presupuesto. Por favor intentá de nuevo.');
+        }
+    }
+
+    /**
+     * Generate next quotation code
+     */
+    private async generateQuotationCode(): Promise<string> {
+        const year = new Date().getFullYear();
+        const prefix = `PRES-${year}-`;
+
+        const last = await this.prisma.quotation.findFirst({
+            where: { code: { startsWith: prefix } },
+            orderBy: { code: 'desc' }
+        });
+
+        let nextNum = 1;
+        if (last?.code) {
+            const match = last.code.match(/(\d+)$/);
+            if (match) nextNum = parseInt(match[1]) + 1;
+        }
+
+        return `${prefix}${nextNum.toString().padStart(5, '0')}`;
     }
 }

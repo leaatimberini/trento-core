@@ -2,7 +2,7 @@
 
 **Versión:** 2.0.0-beta
 **Estado:** Producción / Desarrollo Activo
-**Stack Tecnológico:** Node.js (NestJS) | React (Next.js) | PostgreSQL | Redis | Docker | Gemini AI
+**Stack Tecnológico:** Node.js (NestJS) | React (Next.js) | PostgreSQL | Redis | Docker | Groq/Llama AI
 
 ---
 
@@ -15,8 +15,8 @@
 *   **CRM:** Gestión de perfiles de clientes, segmentación RFM, programa de fidelización (puntos), timeline de actividades, y campañas de marketing.
 *   **B2B Mayorista:** Presupuestos, consignaciones, facturación y gestión de clientes mayoristas.
 *   **Ecommerce:** API integrada para canales de venta digital.
-*   **IA (Cortex):** Asistente basado en LLM para consultas de stock en lenguaje natural y detección de anomalías.
-*   **Bot Telegram:** Integración para consultas rápidas de stock y operaciones básicas.
+*   **IA (Cortex):** Asistente basado en Groq/Llama 3.3 70B para consultas de stock y creación de presupuestos por lenguaje natural.
+*   **Bot Telegram:** Integración completa para consultas, creación de presupuestos por IA con generación de PDF.
 
 > [!NOTE]
 > Para detalles técnicos profundos, decisiones arquitectónicas y modelos de dominio, por favor consulte [ARCHITECTURE.md](./ARCHITECTURE.md).

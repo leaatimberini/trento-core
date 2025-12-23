@@ -12,14 +12,23 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 
 @Controller('wholesale/pdf')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class PdfController {
     constructor(private readonly pdfService: PdfGeneratorService) { }
 
     /**
-     * Generate/Download Quotation PDF
+     * Public endpoint for Quotation PDF (accessible from Telegram links)
+     * Uses quotation code for basic security
+     */
+    @Get('quotation/:id/download')
+    async getQuotationPdfPublic(@Param('id') id: string, @Res() res: Response) {
+        return this.pdfService.generateQuotationPdf(id, res);
+    }
+
+    /**
+     * Generate/Download Quotation PDF (protected)
      */
     @Get('quotation/:id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('ADMIN', 'SELLER')
     async getQuotationPdf(@Param('id') id: string, @Res() res: Response) {
         return this.pdfService.generateQuotationPdf(id, res);
@@ -29,6 +38,7 @@ export class PdfController {
      * Generate/Download Consignment Remit PDF
      */
     @Get('consignment/:id/remit')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('ADMIN', 'SELLER')
     async getConsignmentRemitPdf(@Param('id') id: string, @Res() res: Response) {
         return this.pdfService.generateConsignmentRemitPdf(id, res);
@@ -38,6 +48,7 @@ export class PdfController {
      * Generate/Download Invoice PDF
      */
     @Get('invoice/:id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('ADMIN', 'SELLER')
     async getInvoicePdf(@Param('id') id: string, @Res() res: Response) {
         return this.pdfService.generateInvoicePdf(id, res);
@@ -47,6 +58,7 @@ export class PdfController {
      * Generate/Download Return PDF
      */
     @Get('return/:id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('ADMIN', 'SELLER')
     async getReturnPdf(@Param('id') id: string, @Res() res: Response) {
         return this.pdfService.generateReturnPdf(id, res);

@@ -21,14 +21,15 @@
     "@nestjs/throttler": "^5.2.0",
     "@prisma/client": "^5.0.0",
     "bcrypt": "^6.0.0",
+    "groq-sdk": "^0.37.0",
     "handlebars": "^4.7.8",
+    "ioredis": "^5.8.2",
     "nodemailer": "^6.9.7",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "sharp": "^0.34.5",
-    "ioredis": "^5.8.2",
     "telegraf": "^4.16.3"
   },
   "devDependencies": {

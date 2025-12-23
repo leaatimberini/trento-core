@@ -52,8 +52,9 @@ services:
       REDIS_HOST: redis
       NODE_ENV: production
       PORT: 3000
-      GEMINI_API_KEY: "AIzaSyCXcvBMPM4ZLgUgdp1wIm935qjrobkJgMM"
-      TELEGRAM_BOT_TOKEN: "8522244184:AAHwG0vcn93xpDmCzQV2zfTH5f7hLCuWZXQ"
+      GEMINI_API_KEY: "${GEMINI_API_KEY}"
+      GROQ_API_KEY: "${GROQ_API_KEY}"
+      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN}"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`api.trento.local`) || PathPrefix(`/api`)"

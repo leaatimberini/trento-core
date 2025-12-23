@@ -4,7 +4,7 @@ import { ProductsService } from '../products/products.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { FinanceService } from '../finance/finance.service';
 import { PrismaService } from '../prisma.service';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
 export interface ProductData {
     name: string;
@@ -16,8 +16,7 @@ export interface ProductData {
 
 @Injectable()
 export class AiService {
-    private genAI: GoogleGenerativeAI;
-    private model: any;
+    private groq: Groq;
 
     constructor(
         private readonly productsService: ProductsService,
@@ -27,8 +26,9 @@ export class AiService {
         private readonly financeService: FinanceService,
         private readonly prisma: PrismaService
     ) {
-        this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-        this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        this.groq = new Groq({
+            apiKey: process.env.GROQ_API_KEY || ''
+        });
     }
 
     /**
@@ -96,23 +96,29 @@ export class AiService {
 
     private async processWithGemini(query: string) {
         try {
-            const prompt = `
-            You are Trento AI, a helpful assistant for a beverage store called "Trento Core".
-            Answer the user's question in Spanish. Be concise, friendly, and professional.
+            const systemPrompt = `Sos Trento AI, un asistente útil para una distribuidora de bebidas llamada "Trento Core".
+            Respondé en español argentino. Sé conciso, amigable y profesional.
             
-            Context:
-            - You can help with recipes (cocktails).
-            - You can give general advice on wine pairings.
-            - If they ask for stock or prices, guide them to ask specifically "stock de [producto]" or "precio de [producto]" for real-time data.
-            
-            User: ${query}
-            `;
+            Contexto:
+            - Podés ayudar con recetas de tragos/cócteles.
+            - Podés dar consejos sobre maridaje de vinos.
+            - Si preguntan por stock o precios, guialos a preguntar "stock de [producto]" o "precio de [producto]" para datos en tiempo real.
+            - Si te piden crear un presupuesto, indicales que usen el comando /presupuestos en el menú /b2b o la web.`;
 
-            const result = await this.model.generateContent(prompt);
-            const response = await result.response;
-            return { text: response.text() };
+            const chatCompletion = await this.groq.chat.completions.create({
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: query }
+                ],
+                model: 'llama-3.3-70b-versatile',
+                temperature: 0.7,
+                max_tokens: 500
+            });
+
+            const responseText = chatCompletion.choices[0]?.message?.content || '';
+            return { text: responseText };
         } catch (error) {
-            console.error('Gemini Chat Error:', error);
+            console.error('Groq Chat Error:', error);
             return { text: "Disculpá, tuve un error al procesar tu consulta. Por favor probá de nuevo." };
         }
     }
@@ -123,6 +129,87 @@ export class AiService {
             .replace(/\b(de|del|la|las|los|el|en)\b/g, '') // Remove articles
             .replace(/\?/g, '') // Remove question marks
             .trim();
+    }
+
+    /**
+     * Parse quotation request from natural language using Groq
+     * Returns structured data for creating a quotation
+     */
+    async parseQuotationRequest(query: string): Promise<{
+        success: boolean;
+        customerName?: string;
+        items?: { productName: string; quantity: number }[];
+        error?: string;
+    }> {
+        try {
+            const systemPrompt = `Sos un parser de pedidos para una distribuidora de bebidas.
+Extraé el nombre del cliente y los productos con cantidades del mensaje del usuario.
+Respondé SOLO con JSON válido, sin markdown ni explicaciones.
+
+IMPORTANTE: Incluí el nombre COMPLETO del producto con sabor/variante si se menciona.
+Por ejemplo:
+- "vodka skyy raspberry" → "vodka skyy raspberry" (NO solo "vodka skyy")
+- "fernet branca menta" → "fernet branca menta"
+- "coca cola zero" → "coca cola zero"
+
+Formato de respuesta:
+{
+  "customerName": "nombre del cliente",
+  "items": [
+    {"productName": "nombre completo del producto", "quantity": número}
+  ]
+}
+
+Reglas de cantidad:
+- "1 coca" o "coca x1" o "una coca" → quantity: 1
+- "2 fernet" o "fernet x2" o "dos fernet" → quantity: 2
+- Si no se especifica cantidad, usá 1
+
+Si no podés identificar el cliente o productos, devolvé:
+{"error": "No pude identificar [lo que falta]"}`;
+
+            const chatCompletion = await this.groq.chat.completions.create({
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: query }
+                ],
+                model: 'llama-3.3-70b-versatile',
+                temperature: 0.2,
+                max_tokens: 500
+            });
+
+            const text = chatCompletion.choices[0]?.message?.content || '{}';
+            const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+            const parsed = JSON.parse(cleanText);
+
+            if (parsed.error) {
+                return { success: false, error: parsed.error };
+            }
+
+            if (!parsed.customerName || !parsed.items || parsed.items.length === 0) {
+                return { success: false, error: 'No pude identificar cliente o productos' };
+            }
+
+            return {
+                success: true,
+                customerName: parsed.customerName,
+                items: parsed.items
+            };
+        } catch (error) {
+            console.error('Parse Quotation Error:', error);
+            return { success: false, error: 'Error al procesar el pedido' };
+        }
+    }
+
+    /**
+     * Check if a query is a quotation creation request
+     */
+    isQuotationRequest(query: string): boolean {
+        const lower = query.toLowerCase();
+        return /crea(r|me)?(\s+un)?\s+(presupuesto|cotizaci[oó]n|pedido)/i.test(lower) ||
+            /presupuesto\s+para/i.test(lower) ||
+            /pedido\s+para/i.test(lower);
     }
 
     /**
@@ -156,15 +243,23 @@ export class AiService {
         `;
 
         try {
-            const result = await this.model.generateContent(prompt);
-            const response = await result.response;
-            const text = response.text();
+            const chatCompletion = await this.groq.chat.completions.create({
+                messages: [
+                    { role: 'system', content: 'You are an expert copywriter. Respond ONLY with valid JSON, no markdown.' },
+                    { role: 'user', content: prompt }
+                ],
+                model: 'llama-3.3-70b-versatile',
+                temperature: 0.7,
+                max_tokens: 800
+            });
+
+            const text = chatCompletion.choices[0]?.message?.content || '{}';
 
             // Clean markdown code blocks if present
             const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
             return JSON.parse(cleanText);
         } catch (error) {
-            console.error('Gemini Error:', error);
+            console.error('Groq Error:', error);
             // Fallback to template if AI fails
             return this.generateDescriptionFallback(data);
         }
@@ -172,11 +267,17 @@ export class AiService {
 
     async generateContent(prompt: string): Promise<string> {
         try {
-            const result = await this.model.generateContent(prompt);
-            const response = await result.response;
-            return response.text();
+            const chatCompletion = await this.groq.chat.completions.create({
+                messages: [
+                    { role: 'user', content: prompt }
+                ],
+                model: 'llama-3.3-70b-versatile',
+                temperature: 0.7,
+                max_tokens: 1000
+            });
+            return chatCompletion.choices[0]?.message?.content || '';
         } catch (error) {
-            console.error('Gemini Generate Content Error:', error);
+            console.error('Groq Generate Content Error:', error);
             throw new Error('Failed to generate content');
         }
     }
@@ -291,9 +392,13 @@ export class AiService {
             Example: "Posible aumento debido al clima cálido y la temporada de verano."
             `;
 
-            const result = await this.model.generateContent(prompt);
-            const response = await result.response;
-            return response.text().trim();
+            const chatCompletion = await this.groq.chat.completions.create({
+                messages: [{ role: 'user', content: prompt }],
+                model: 'llama-3.3-70b-versatile',
+                temperature: 0.7,
+                max_tokens: 100
+            });
+            return chatCompletion.choices[0]?.message?.content?.trim() || '';
         } catch (error) {
             return ''; // Fail silently for analytics
         }
