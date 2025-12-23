@@ -43,7 +43,7 @@ logs/
 *.swo
 
 # Project Specific
-uploads/
+/uploads/
 postgres_data/
 redis_data/
 inventory_audit/
