@@ -21,6 +21,320 @@ interface LoyaltyData {
     level: string;
 }
 
+interface ActivityItem {
+    id: string;
+    type: string;
+    title: string;
+    description?: string;
+    createdAt: string;
+    customer?: { name: string };
+}
+
+interface SegmentData {
+    segment: string;
+    count: number;
+    avgScore: number;
+}
+
+interface Campaign {
+    id: string;
+    segment: string;
+    subject: string;
+    content: string;
+    recipientCount: number;
+    sentAt: string;
+    status: string;
+}
+
+// ==================== ACTIVITIES TAB ====================
+function ActivitiesTab() {
+    const [activities, setActivities] = useState<ActivityItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedCustomer, setSelectedCustomer] = useState<string>('');
+    const [customers, setCustomers] = useState<Customer[]>([]);
+
+    useEffect(() => {
+        fetchCustomers();
+    }, []);
+
+    useEffect(() => {
+        if (selectedCustomer) {
+            fetchActivities(selectedCustomer);
+        }
+    }, [selectedCustomer]);
+
+    const fetchCustomers = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/customers', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setCustomers(await res.json());
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchActivities = async (customerId: string) => {
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/crm/customers/${customerId}/timeline?limit=50`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setActivities(await res.json());
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getActivityIcon = (type: string) => {
+        switch (type) {
+            case 'PURCHASE': return '🛒';
+            case 'POINTS_EARNED': return '⭐';
+            case 'POINTS_REDEEMED': return '🎁';
+            case 'LEVEL_UP': return '🏆';
+            case 'VISIT': return '👁️';
+            case 'NOTE': return '📝';
+            default: return '📌';
+        }
+    };
+
+    return (
+        <div>
+            <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-400 mb-2">Seleccionar Cliente</label>
+                <select
+                    value={selectedCustomer}
+                    onChange={(e) => setSelectedCustomer(e.target.value)}
+                    className="w-full max-w-md bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white"
+                >
+                    <option value="">-- Elegir cliente --</option>
+                    {customers.map(c => (
+                        <option key={c.id} value={c.id}>{c.name} ({c.email})</option>
+                    ))}
+                </select>
+            </div>
+
+            {!selectedCustomer ? (
+                <div className="text-center py-16">
+                    <Activity size={40} className="text-blue-400 mx-auto mb-4" />
+                    <p className="text-white font-bold text-lg mb-2">Seleccioná un cliente</p>
+                    <p className="text-gray-400 text-sm">Para ver su historial de actividades</p>
+                </div>
+            ) : loading ? (
+                <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto"></div>
+                </div>
+            ) : activities.length === 0 ? (
+                <div className="text-center py-16">
+                    <p className="text-gray-400">No hay actividades registradas</p>
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {activities.map((activity) => (
+                        <div key={activity.id} className="bg-white/5 rounded-xl p-4 flex items-start gap-4">
+                            <div className="text-2xl">{getActivityIcon(activity.type)}</div>
+                            <div className="flex-1">
+                                <p className="font-bold text-white">{activity.title}</p>
+                                {activity.description && (
+                                    <p className="text-sm text-gray-400">{activity.description}</p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {new Date(activity.createdAt).toLocaleString('es-AR')}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ==================== SEGMENTS TAB ====================
+function SegmentsTab() {
+    const [segments, setSegments] = useState<SegmentData[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchSegments();
+    }, []);
+
+    const fetchSegments = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/crm/segments', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                // Convert object { segment: {count, avgScore} } to array
+                if (data.segments && typeof data.segments === 'object') {
+                    const segmentArray = Object.entries(data.segments).map(([segment, info]: [string, any]) => ({
+                        segment,
+                        count: info.count || 0,
+                        avgScore: info.avgScore || 0
+                    }));
+                    setSegments(segmentArray);
+                } else if (Array.isArray(data)) {
+                    setSegments(data);
+                } else {
+                    setSegments([]);
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getSegmentColor = (segment: string) => {
+        switch (segment) {
+            case 'CHAMPIONS': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+            case 'LOYAL': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+            case 'POTENTIAL': return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+            case 'AT_RISK': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
+            case 'LOST': return 'bg-red-500/20 text-red-400 border-red-500/30';
+            default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+        }
+    };
+
+    const getSegmentLabel = (segment: string) => {
+        const labels: Record<string, string> = {
+            'CHAMPIONS': 'Campeones',
+            'LOYAL': 'Leales',
+            'POTENTIAL': 'Potencial',
+            'AT_RISK': 'En Riesgo',
+            'LOST': 'Perdidos',
+            'NEW': 'Nuevos'
+        };
+        return labels[segment] || segment;
+    };
+
+    if (loading) {
+        return (
+            <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 mx-auto"></div>
+            </div>
+        );
+    }
+
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold text-white">Segmentación RFM</h3>
+                <p className="text-sm text-gray-400">Recency • Frequency • Monetary</p>
+            </div>
+
+            {segments.length === 0 ? (
+                <div className="text-center py-16">
+                    <Target size={40} className="text-purple-400 mx-auto mb-4" />
+                    <p className="text-white font-bold text-lg mb-2">Sin datos de segmentación</p>
+                    <p className="text-gray-400 text-sm">Los segmentos se calculan automáticamente con las ventas</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {segments.map((seg) => (
+                        <div key={seg.segment} className={`rounded-xl p-6 border ${getSegmentColor(seg.segment)}`}>
+                            <div className="text-3xl font-bold mb-2">{seg.count}</div>
+                            <div className="font-medium">{getSegmentLabel(seg.segment)}</div>
+                            <div className="text-xs opacity-70 mt-1">Puntaje prom: {seg.avgScore?.toFixed(1) || 'N/A'}</div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ==================== CAMPAIGNS TAB ====================
+function CampaignsTab() {
+    const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchCampaigns();
+    }, []);
+
+    const fetchCampaigns = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/marketing/campaigns', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setCampaigns(await res.json());
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400 mx-auto"></div>
+            </div>
+        );
+    }
+
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold text-white">Campañas de Marketing</h3>
+                <a href="/marketing" className="bg-emerald-500 text-black px-4 py-2 rounded-xl font-bold hover:bg-emerald-400 transition-all text-sm">
+                    Ir a Marketing
+                </a>
+            </div>
+
+            {campaigns.length === 0 ? (
+                <div className="text-center py-16">
+                    <Megaphone size={40} className="text-emerald-400 mx-auto mb-4" />
+                    <p className="text-white font-bold text-lg mb-2">Sin campañas</p>
+                    <p className="text-gray-400 text-sm mb-4">Las campañas se crean desde el módulo de Marketing</p>
+                    <a href="/marketing" className="inline-block bg-emerald-500 text-black px-6 py-2 rounded-xl font-bold hover:bg-emerald-400 transition-all">
+                        Crear Primera Campaña
+                    </a>
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {campaigns.map((campaign) => (
+                        <div key={campaign.id} className="bg-white/5 rounded-xl p-4 flex items-center justify-between">
+                            <div>
+                                <p className="font-bold text-white">{campaign.subject}</p>
+                                <p className="text-sm text-gray-400">
+                                    Segmento: {campaign.segment} • {campaign.recipientCount} destinatarios
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {new Date(campaign.sentAt).toLocaleString('es-AR')}
+                                </p>
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${campaign.status === 'SENT' ? 'bg-green-500/20 text-green-400' :
+                                campaign.status === 'DRAFT' ? 'bg-gray-500/20 text-gray-400' :
+                                    'bg-blue-500/20 text-blue-400'
+                                }`}>
+                                {campaign.status === 'SENT' ? 'Enviada' : campaign.status === 'DRAFT' ? 'Borrador' : campaign.status}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function CRMPage() {
     const [loyaltyData, setLoyaltyData] = useState<LoyaltyData[]>([]);
     const [customers, setCustomers] = useState<Customer[]>([]);
@@ -185,8 +499,8 @@ export default function CRMPage() {
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
                                         className={`flex items-center gap-2 py-4 px-3 border-b-2 font-medium text-sm transition-all ${activeTab === tab.id
-                                                ? 'border-amber-500 text-amber-400'
-                                                : 'border-transparent text-gray-400 hover:text-white'
+                                            ? 'border-amber-500 text-amber-400'
+                                            : 'border-transparent text-gray-400 hover:text-white'
                                             }`}
                                     >
                                         <Icon size={18} />
@@ -241,8 +555,8 @@ export default function CRMPage() {
                                                 </div>
                                                 <div className="flex items-center gap-4">
                                                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.level === 'VIP' ? 'bg-purple-500/20 text-purple-400' :
-                                                            item.level === 'ORO' ? 'bg-amber-500/20 text-amber-400' :
-                                                                'bg-gray-500/20 text-gray-400'
+                                                        item.level === 'ORO' ? 'bg-amber-500/20 text-amber-400' :
+                                                            'bg-gray-500/20 text-gray-400'
                                                         }`}>
                                                         {item.level}
                                                     </span>
@@ -256,33 +570,15 @@ export default function CRMPage() {
                         )}
 
                         {activeTab === 'activities' && (
-                            <div className="text-center py-16">
-                                <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <Activity size={40} className="text-blue-400" />
-                                </div>
-                                <p className="text-white font-bold text-lg mb-2">Historial de Actividades</p>
-                                <p className="text-gray-400 text-sm">Compras, visitas, interacciones</p>
-                            </div>
+                            <ActivitiesTab />
                         )}
 
                         {activeTab === 'segments' && (
-                            <div className="text-center py-16">
-                                <div className="w-20 h-20 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <Target size={40} className="text-purple-400" />
-                                </div>
-                                <p className="text-white font-bold text-lg mb-2">Segmentación RFM</p>
-                                <p className="text-gray-400 text-sm">Recency, Frequency, Monetary</p>
-                            </div>
+                            <SegmentsTab />
                         )}
 
                         {activeTab === 'campaigns' && (
-                            <div className="text-center py-16">
-                                <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <Megaphone size={40} className="text-emerald-400" />
-                                </div>
-                                <p className="text-white font-bold text-lg mb-2">Campañas de Marketing</p>
-                                <p className="text-gray-400 text-sm">WhatsApp, Email, Push</p>
-                            </div>
+                            <CampaignsTab />
                         )}
                     </div>
                 </div>

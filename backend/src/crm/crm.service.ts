@@ -193,6 +193,70 @@ export class CrmService {
         };
     }
 
+    /**
+     * Get all loyalty data for dashboard
+     */
+    async getLoyaltyData() {
+        return this.prisma.loyaltyPoints.findMany({
+            include: {
+                customer: {
+                    select: { name: true, email: true }
+                }
+            },
+            orderBy: { currentPoints: 'desc' }
+        });
+    }
+
+    /**
+     * Grant points manually to a customer
+     */
+    async grantPoints(customerId: string, points: number, reason?: string) {
+        // Get or create loyalty record
+        let loyalty = await this.prisma.loyaltyPoints.findUnique({
+            where: { customerId }
+        });
+
+        if (!loyalty) {
+            loyalty = await this.prisma.loyaltyPoints.create({
+                data: { customerId }
+            });
+        }
+
+        // Update points
+        const updated = await this.prisma.loyaltyPoints.update({
+            where: { customerId },
+            data: {
+                currentPoints: { increment: points },
+                lifetimePoints: { increment: points }
+            }
+        });
+
+        // Record transaction
+        await this.prisma.pointsTransaction.create({
+            data: {
+                customerId,
+                type: 'EARN',
+                points,
+                balance: updated.currentPoints,
+                description: reason || 'Puntos otorgados manualmente'
+            }
+        });
+
+        // Record activity
+        await this.recordActivity({
+            customerId,
+            type: ActivityType.POINTS_EARNED,
+            title: `+${points} puntos (manual)`,
+            pointsChange: points,
+            description: reason
+        });
+
+        // Check for level upgrade
+        await this.checkLevelUpgrade(customerId);
+
+        return { pointsGranted: points, newBalance: updated.currentPoints };
+    }
+
     // ==================== ACTIVITY TIMELINE ====================
 
     /**

@@ -12,9 +12,11 @@
 
 *   **ERP:** Finanzas, Compras, Stock e Inventario.
 *   **POS (Punto de Venta):** Ventas de mostrador con control de turnos de caja.
-*   **CRM:** Gestión de perfiles de clientes, cuentas corrientes B2B y límites de crédito.
+*   **CRM:** Gestión de perfiles de clientes, segmentación RFM, programa de fidelización (puntos), timeline de actividades, y campañas de marketing.
+*   **B2B Mayorista:** Presupuestos, consignaciones, facturación y gestión de clientes mayoristas.
 *   **Ecommerce:** API integrada para canales de venta digital.
 *   **IA (Cortex):** Asistente basado en LLM para consultas de stock en lenguaje natural y detección de anomalías.
+*   **Bot Telegram:** Integración para consultas rápidas de stock y operaciones básicas.
 
 > [!NOTE]
 > Para detalles técnicos profundos, decisiones arquitectónicas y modelos de dominio, por favor consulte [ARCHITECTURE.md](./ARCHITECTURE.md).

@@ -212,7 +212,7 @@ export default function WholesaleDashboard() {
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <span className={`px-2 py-1 rounded text-white text-xs ${getRiskColor(customer.riskLevel)}`}>
-                                                            {customer.riskLevel}
+                                                            {{ 'LOW': 'Bajo', 'MEDIUM': 'Medio', 'HIGH': 'Alto', 'CRITICAL': 'Crítico' }[customer.riskLevel] || customer.riskLevel}
                                                         </span>
                                                         <span className="text-gray-500">{customer.riskScore}pts</span>
                                                     </div>
@@ -277,10 +277,18 @@ export default function WholesaleDashboard() {
                         <div className="p-4 grid grid-cols-2 md:grid-cols-6 gap-4">
                             {['DRAFT', 'SENT', 'ACCEPTED', 'REJECTED', 'INVOICED', 'CONVERTED'].map((status) => {
                                 const data = stats?.quotations.byStatus.find(s => s.status === status);
+                                const statusLabels: Record<string, string> = {
+                                    'DRAFT': 'Borrador',
+                                    'SENT': 'Enviado',
+                                    'ACCEPTED': 'Aceptado',
+                                    'REJECTED': 'Rechazado',
+                                    'INVOICED': 'Facturado',
+                                    'CONVERTED': 'Convertido'
+                                };
                                 return (
                                     <div key={status} className="text-center p-3 rounded-xl bg-white/5 border border-white/10">
                                         <div className="text-xl font-bold text-white">{data?.count || 0}</div>
-                                        <div className="text-xs text-gray-400 uppercase">{status}</div>
+                                        <div className="text-xs text-gray-400 uppercase">{statusLabels[status] || status}</div>
                                         {data?.totalValue && (
                                             <div className="text-xs text-gray-500">
                                                 ${data.totalValue.toLocaleString()}

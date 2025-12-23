@@ -39,6 +39,24 @@ export class CrmController {
         return this.crmService.getSegmentSummary();
     }
 
+    /**
+     * Get all loyalty data
+     */
+    @Get('loyalty')
+    @Roles('ADMIN')
+    getLoyaltyData() {
+        return this.crmService.getLoyaltyData();
+    }
+
+    /**
+     * Grant points to a customer
+     */
+    @Post('loyalty/grant')
+    @Roles('ADMIN')
+    grantPoints(@Body() body: { customerId: string; points: number; reason?: string }) {
+        return this.crmService.grantPoints(body.customerId, body.points, body.reason);
+    }
+
     // ==================== TIMELINE ENDPOINTS ====================
 
     /**
