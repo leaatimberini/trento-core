@@ -33,7 +33,11 @@ jobs:
       run: npm run test
 
     - name: Build Backend
-      run: npm run build
+      run: |
+        echo "Node version: $(node -v)"
+        echo "NPM version: $(npm -v)"
+        echo "TypeScript version: $(npx tsc --version)"
+        npm run build 2>&1
 
   frontend-build:
     runs-on: ubuntu-latest
