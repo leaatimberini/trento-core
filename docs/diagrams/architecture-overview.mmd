@@ -1,0 +1,59 @@
+graph TD
+    subgraph Clients
+        Web[🖥️ Admin / POS Web]
+        Mobile[📱 App Vendedores]
+        Bot[🤖 Telegram Bot]
+    end
+
+    subgraph "Reverse Proxy & Edge"
+        Traefik[🛡️ Traefik Proxy]
+    end
+
+    subgraph "Core Backend (NestJS)"
+        API[API Gateway]
+        Auth[🔐 Módulo Auth]
+        
+        subgraph Modules
+            Sales[💰 Núcleo de Ventas]
+            Inventory[📦 Motor de Inventario]
+            Wholesale[🏭 B2B / Mayorista]
+            Finance[📉 Finanzas e Impuestos]
+            AI[🧠 IA Cortex (Gemini)]
+        end
+        
+        Jobs[⏰ Cron / Colas]
+    end
+
+    subgraph Infrastructure
+        DB[(🐘 PostgreSQL)]
+        Cache[(🔴 Redis)]
+    end
+
+    subgraph External Services
+        Gemini[✨ Google Gemini API]
+        AFIP[🏛️ ARCA / AFIP]
+        Telegram[✈️ Telegram API]
+    end
+
+    %% Connections
+    Web --> Traefik
+    Mobile --> Traefik
+    Bot -- Webhook --> Traefik
+    
+    Traefik --> API
+    
+    API --> Auth
+    Auth --> Modules
+    
+    Sales --> Inventory
+    Wholesale --> Sales
+    Wholesale --> Inventory
+    AI --> Inventory
+    AI --> Sales
+    
+    Modules --> DB
+    Modules --> Cache
+    
+    AI --> Gemini
+    Finance --> AFIP
+    Jobs --> Telegram

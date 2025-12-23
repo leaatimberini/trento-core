@@ -1,0 +1,55 @@
+# Basics
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Environments & Secrets (CRITICAL)
+.env
+.env.production
+.env.local
+.env.test
+backend/.env
+frontend/.env
+*.key
+*.pem
+*.crt
+*.pfx
+
+# Node Modules
+node_modules/
+dist/
+build/
+.next/
+coverage/
+
+# Automated Backups & Dumps
+*.sql
+*.zip
+*.tar.gz
+backups/
+dump/
+
+# Logs
+logs/
+*.log
+
+# Editor Directories
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Project Specific
+uploads/
+postgres_data/
+redis_data/
+inventory_audit/
+
+# Tests
+test-results/
+
+# TypeScript
+*.tsbuildinfo

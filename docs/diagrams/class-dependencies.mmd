@@ -1,0 +1,29 @@
+classDiagram
+    class SalesService {
+        +createSale()
+        +processPayment()
+    }
+    class WholesaleService {
+        +createConsignment()
+        +processReturn()
+        +getStats()
+    }
+    class InventoryService {
+        +checkStock()
+        +deductStock()
+        +restock()
+    }
+    class FinanceService {
+        +recordTransaction()
+        +getDailyStats()
+    }
+    class AiService {
+        +predictDemand()
+        +analyzeTrend()
+    }
+
+    SalesService --> InventoryService : "Verifica y Descuenta"
+    SalesService --> FinanceService : "Registra Ingreso"
+    WholesaleService --> InventoryService : "Mueve stock a Cliente"
+    WholesaleService --> SalesService : "Genera Factura final"
+    AiService --> SalesService : "Lee historial para predicción"

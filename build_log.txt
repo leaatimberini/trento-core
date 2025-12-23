@@ -1,0 +1,474 @@
+time="2025-12-22T12:17:42Z" level=warning msg="/home/ec2-user/trento_core/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Image trento_core-backend Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 556B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 984B 0.0s done
+#2 DONE 0.1s
+
+#3 [internal] load metadata for docker.io/library/node:18-slim
+#3 DONE 0.5s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 177B done
+#4 DONE 0.1s
+
+#5 [builder 1/9] FROM docker.io/library/node:18-slim@sha256:f9ab18e354e6855ae56ef2b290dd225c1e51a564f87584b9bd21dd651838830e
+#5 CACHED
+
+#6 [internal] load build context
+#6 transferring context: 25.96kB 0.1s done
+#6 DONE 0.2s
+
+#7 [builder 2/9] RUN apt-get update -y && apt-get install -y openssl
+#7 0.745 Get:1 http://deb.debian.org/debian bookworm InRelease [151 kB]
+#7 0.758 Get:2 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+#7 0.758 Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [48.0 kB]
+#7 0.829 Get:4 http://deb.debian.org/debian bookworm/main amd64 Packages [8791 kB]
+#7 0.874 Get:5 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [6924 B]
+#7 0.904 Get:6 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [290 kB]
+#7 1.690 Fetched 9342 kB in 1s (9648 kB/s)
+#7 1.690 Reading package lists...
+#7 2.123 Reading package lists...
+#7 2.568 Building dependency tree...
+#7 2.664 Reading state information...
+#7 2.775 The following additional packages will be installed:
+#7 2.776   libssl3
+#7 2.777 Suggested packages:
+#7 2.777   ca-certificates
+#7 2.791 The following NEW packages will be installed:
+#7 2.791   libssl3 openssl
+#7 2.810 0 upgraded, 2 newly installed, 0 to remove and 17 not upgraded.
+#7 2.810 Need to get 3463 kB of archives.
+#7 2.810 After this operation, 8524 kB of additional disk space will be used.
+#7 2.810 Get:1 http://deb.debian.org/debian-security bookworm-security/main amd64 libssl3 amd64 3.0.17-1~deb12u3 [2028 kB]
+#7 2.832 Get:2 http://deb.debian.org/debian-security bookworm-security/main amd64 openssl amd64 3.0.17-1~deb12u3 [1434 kB]
+#7 3.027 debconf: delaying package configuration, since apt-utils is not installed
+#7 3.049 Fetched 3463 kB in 0s (88.7 MB/s)
+#7 3.092 Selecting previously unselected package libssl3:amd64.
+#7 3.092 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 6089 files and directories currently installed.)
+#7 3.161 Preparing to unpack .../libssl3_3.0.17-1~deb12u3_amd64.deb ...
+#7 3.172 Unpacking libssl3:amd64 (3.0.17-1~deb12u3) ...
+#7 3.313 Selecting previously unselected package openssl.
+#7 3.314 Preparing to unpack .../openssl_3.0.17-1~deb12u3_amd64.deb ...
+#7 3.318 Unpacking openssl (3.0.17-1~deb12u3) ...
+#7 3.430 Setting up libssl3:amd64 (3.0.17-1~deb12u3) ...
+#7 3.444 Setting up openssl (3.0.17-1~deb12u3) ...
+#7 3.463 Processing triggers for libc-bin (2.36-9+deb12u10) ...
+#7 DONE 3.7s
+
+#8 [builder 3/9] WORKDIR /app
+#8 DONE 0.2s
+
+#9 [builder 4/9] COPY package*.json ./
+#9 DONE 0.2s
+
+#10 [builder 5/9] COPY prisma ./prisma/
+#10 DONE 0.1s
+
+#11 [builder 6/9] RUN npm install
+#11 7.757 npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+#11 9.574 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#11 9.793 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#11 9.836 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#11 9.982 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#11 24.40 
+#11 24.40 added 919 packages, and audited 920 packages in 24s
+#11 24.40 
+#11 24.40 136 packages are looking for funding
+#11 24.40   run `npm fund` for details
+#11 24.43 
+#11 24.43 42 vulnerabilities (5 low, 1 moderate, 36 high)
+#11 24.43 
+#11 24.43 To address issues that do not require attention, run:
+#11 24.43   npm audit fix
+#11 24.43 
+#11 24.43 To address all issues (including breaking changes), run:
+#11 24.43   npm audit fix --force
+#11 24.43 
+#11 24.43 Run `npm audit` for details.
+#11 24.46 npm notice
+#11 24.46 npm notice New major version of npm available! 10.8.2 -> 11.7.0
+#11 24.46 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.7.0
+#11 24.46 npm notice To update run: npm install -g npm@11.7.0
+#11 24.46 npm notice
+#11 DONE 24.8s
+
+#12 [builder 7/9] COPY . .
+#12 DONE 1.5s
+
+#13 [builder 8/9] RUN npx prisma generate
+#13 2.806 Prisma schema loaded from prisma/schema.prisma
+#13 4.471 
+#13 4.471 ✔ Generated Prisma Client (v5.22.0) to ./node_modules/@prisma/client in 580ms
+#13 4.471 
+#13 4.471 Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+#13 4.471 
+#13 4.471 Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+#13 4.471 
+#13 DONE 4.8s
+
+#14 [builder 9/9] RUN npm run build
+#14 0.507 
+#14 0.507 > trento-backend@0.0.1 build
+#14 0.507 > nest build
+#14 0.507 
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m684[0m:[93m77[0m - [91merror[0m[90m TS1005: [0m'}' expected.
+#14 11.89 
+#14 11.89 [7m684[0m                                 ${this.formatDate(invoice.caeExpiration)    private generateReturnHtml(returnRecord: any): string {
+#14 11.89 [7m   [0m [91m                                                                            ~~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m789[0m:[93m2[0m - [91merror[0m[90m TS1110: [0mType expected.
+#14 11.89 
+#14 11.89 [7m789[0m </div>
+#14 11.89 [7m   [0m [91m ~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m790[0m:[93m6[0m - [91merror[0m[90m TS1161: [0mUnterminated regular expression literal.
+#14 11.89 
+#14 11.89 [7m790[0m     </div>
+#14 11.89 [7m   [0m [91m     ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m791[0m:[93m7[0m - [91merror[0m[90m TS2304: [0mCannot find name 'div'.
+#14 11.89 
+#14 11.89 [7m791[0m     < div style = "text-align:center" >
+#14 11.89 [7m   [0m [91m      ~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m791[0m:[93m11[0m - [91merror[0m[90m TS1005: [0m';' expected.
+#14 11.89 
+#14 11.89 [7m791[0m     < div style = "text-align:center" >
+#14 11.89 [7m   [0m [91m          ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m791[0m:[93m11[0m - [91merror[0m[90m TS2304: [0mCannot find name 'style'.
+#14 11.89 
+#14 11.89 [7m791[0m     < div style = "text-align:center" >
+#14 11.89 [7m   [0m [91m          ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m792[0m:[93m10[0m - [91merror[0m[90m TS2304: [0mCannot find name 'div'.
+#14 11.89 
+#14 11.89 [7m792[0m         <div style="font-size:10px" > Comprobante Autorizado </div>
+#14 11.89 [7m   [0m [91m         ~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m792[0m:[93m14[0m - [91merror[0m[90m TS1005: [0m'>' expected.
+#14 11.89 
+#14 11.89 [7m792[0m         <div style="font-size:10px" > Comprobante Autorizado </div>
+#14 11.89 [7m   [0m [91m             ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m792[0m:[93m14[0m - [91merror[0m[90m TS2304: [0mCannot find name 'style'.
+#14 11.89 
+#14 11.89 [7m792[0m         <div style="font-size:10px" > Comprobante Autorizado </div>
+#14 11.89 [7m   [0m [91m             ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m792[0m:[93m19[0m - [91merror[0m[90m TS1005: [0m';' expected.
+#14 11.89 
+#14 11.89 [7m792[0m         <div style="font-size:10px" > Comprobante Autorizado </div>
+#14 11.89 [7m   [0m [91m                  ~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m792[0m:[93m39[0m - [91merror[0m[90m TS2304: [0mCannot find name 'Comprobante'.
+#14 11.89 
+#14 11.89 [7m792[0m         <div style="font-size:10px" > Comprobante Autorizado </div>
+#14 11.89 [7m   [0m [91m                                      ~~~~~~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m792[0m:[93m51[0m - [91merror[0m[90m TS1005: [0m';' expected.
+#14 11.89 
+#14 11.89 [7m792[0m         <div style="font-size:10px" > Comprobante Autorizado </div>
+#14 11.89 [7m   [0m [91m                                                  ~~~~~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m792[0m:[93m51[0m - [91merror[0m[90m TS2304: [0mCannot find name 'Autorizado'.
+#14 11.89 
+#14 11.89 [7m792[0m         <div style="font-size:10px" > Comprobante Autorizado </div>
+#14 11.89 [7m   [0m [91m                                                  ~~~~~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m792[0m:[93m63[0m - [91merror[0m[90m TS1161: [0mUnterminated regular expression literal.
+#14 11.89 
+#14 11.89 [7m792[0m         <div style="font-size:10px" > Comprobante Autorizado </div>
+#14 11.89 [7m   [0m [91m                                                              ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m793[0m:[93m18[0m - [91merror[0m[90m TS2304: [0mCannot find name 'QR'.
+#14 11.89 
+#14 11.89 [7m793[0m             < !--QR Code would go here-- >
+#14 11.89 [7m   [0m [91m                 ~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m793[0m:[93m21[0m - [91merror[0m[90m TS1005: [0m';' expected.
+#14 11.89 
+#14 11.89 [7m793[0m             < !--QR Code would go here-- >
+#14 11.89 [7m   [0m [91m                    ~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m793[0m:[93m21[0m - [91merror[0m[90m TS2304: [0mCannot find name 'Code'.
+#14 11.89 
+#14 11.89 [7m793[0m             < !--QR Code would go here-- >
+#14 11.89 [7m   [0m [91m                    ~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m793[0m:[93m26[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+#14 11.89 
+#14 11.89 [7m793[0m             < !--QR Code would go here-- >
+#14 11.89 [7m   [0m [91m                         ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m793[0m:[93m26[0m - [91merror[0m[90m TS2304: [0mCannot find name 'would'.
+#14 11.89 
+#14 11.89 [7m793[0m             < !--QR Code would go here-- >
+#14 11.89 [7m   [0m [91m                         ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m793[0m:[93m32[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+#14 11.89 
+#14 11.89 [7m793[0m             < !--QR Code would go here-- >
+#14 11.89 [7m   [0m [91m                               ~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m793[0m:[93m32[0m - [91merror[0m[90m TS2304: [0mCannot find name 'go'.
+#14 11.89 
+#14 11.89 [7m793[0m             < !--QR Code would go here-- >
+#14 11.89 [7m   [0m [91m                               ~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m793[0m:[93m35[0m - [91merror[0m[90m TS2304: [0mCannot find name 'here'.
+#14 11.89 
+#14 11.89 [7m793[0m             < !--QR Code would go here-- >
+#14 11.89 [7m   [0m [91m                                  ~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m794[0m:[93m18[0m - [91merror[0m[90m TS2304: [0mCannot find name 'div'.
+#14 11.89 
+#14 11.89 [7m794[0m                 <div style="width:80px;height:80px;border:1px solid #333;margin:10px auto;display:flex;align-items:center;justify-content:center;font-size:10px" >
+#14 11.89 [7m   [0m [91m                 ~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m794[0m:[93m22[0m - [91merror[0m[90m TS1005: [0m'>' expected.
+#14 11.89 
+#14 11.89 [7m794[0m                 <div style="width:80px;height:80px;border:1px solid #333;margin:10px auto;display:flex;align-items:center;justify-content:center;font-size:10px" >
+#14 11.89 [7m   [0m [91m                     ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m794[0m:[93m22[0m - [91merror[0m[90m TS2304: [0mCannot find name 'style'.
+#14 11.89 
+#14 11.89 [7m794[0m                 <div style="width:80px;height:80px;border:1px solid #333;margin:10px auto;display:flex;align-items:center;justify-content:center;font-size:10px" >
+#14 11.89 [7m   [0m [91m                     ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m794[0m:[93m27[0m - [91merror[0m[90m TS1005: [0m';' expected.
+#14 11.89 
+#14 11.89 [7m794[0m                 <div style="width:80px;height:80px;border:1px solid #333;margin:10px auto;display:flex;align-items:center;justify-content:center;font-size:10px" >
+#14 11.89 [7m   [0m [91m                          ~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m795[0m:[93m21[0m - [91merror[0m[90m TS2304: [0mCannot find name 'QR'.
+#14 11.89 
+#14 11.89 [7m795[0m                     QR AFIP
+#14 11.89 [7m   [0m [91m                    ~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m795[0m:[93m24[0m - [91merror[0m[90m TS1005: [0m';' expected.
+#14 11.89 
+#14 11.89 [7m795[0m                     QR AFIP
+#14 11.89 [7m   [0m [91m                       ~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m795[0m:[93m24[0m - [91merror[0m[90m TS2304: [0mCannot find name 'AFIP'.
+#14 11.89 
+#14 11.89 [7m795[0m                     QR AFIP
+#14 11.89 [7m   [0m [91m                       ~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m795[0m:[93m24[0m - [91merror[0m[90m TS2365: [0mOperator '<' cannot be applied to types 'boolean' and 'RegExp'.
+#14 11.89 
+#14 11.89 [7m795[0m                     QR AFIP
+#14 11.89 [7m   [0m [91m                       ~~~~[0m
+#14 11.89 [7m796[0m                         </div>
+#14 11.89 [7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+#14 11.89 [7m797[0m                         </div>
+#14 11.89 [7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m795[0m:[93m24[0m - [91merror[0m[90m TS2365: [0mOperator '<' cannot be applied to types 'boolean' and 'RegExp'.
+#14 11.89 
+#14 11.89 [7m795[0m                     QR AFIP
+#14 11.89 [7m   [0m [91m                       ~~~~[0m
+#14 11.89 [7m796[0m                         </div>
+#14 11.89 [7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+#14 11.89 [7m797[0m                         </div>
+#14 11.89 [7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+#14 11.89 [7m798[0m                         </div>
+#14 11.89 [7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m796[0m:[93m26[0m - [91merror[0m[90m TS1161: [0mUnterminated regular expression literal.
+#14 11.89 
+#14 11.89 [7m796[0m                         </div>
+#14 11.89 [7m   [0m [91m                         ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m797[0m:[93m26[0m - [91merror[0m[90m TS1161: [0mUnterminated regular expression literal.
+#14 11.89 
+#14 11.89 [7m797[0m                         </div>
+#14 11.89 [7m   [0m [91m                         ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m798[0m:[93m26[0m - [91merror[0m[90m TS1161: [0mUnterminated regular expression literal.
+#14 11.89 
+#14 11.89 [7m798[0m                         </div>
+#14 11.89 [7m   [0m [91m                         ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m800[0m:[93m27[0m - [91merror[0m[90m TS2304: [0mCannot find name 'div'.
+#14 11.89 
+#14 11.89 [7m800[0m                         < div class="footer" >
+#14 11.89 [7m   [0m [91m                          ~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m800[0m:[93m31[0m - [91merror[0m[90m TS1005: [0m';' expected.
+#14 11.89 
+#14 11.89 [7m800[0m                         < div class="footer" >
+#14 11.89 [7m   [0m [91m                              ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m800[0m:[93m36[0m - [91merror[0m[90m TS1005: [0m'{' expected.
+#14 11.89 
+#14 11.89 [7m800[0m                         < div class="footer" >
+#14 11.89 [7m   [0m [91m                                   ~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m801[0m:[93m30[0m - [91merror[0m[90m TS2304: [0mCannot find name 'p'.
+#14 11.89 
+#14 11.89 [7m801[0m                             <p style="text-align:center;font-size:9px" >
+#14 11.89 [7m   [0m [91m                             ~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m801[0m:[93m32[0m - [91merror[0m[90m TS1005: [0m'>' expected.
+#14 11.89 
+#14 11.89 [7m801[0m                             <p style="text-align:center;font-size:9px" >
+#14 11.89 [7m   [0m [91m                               ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m801[0m:[93m32[0m - [91merror[0m[90m TS2304: [0mCannot find name 'style'.
+#14 11.89 
+#14 11.89 [7m801[0m                             <p style="text-align:center;font-size:9px" >
+#14 11.89 [7m   [0m [91m                               ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m801[0m:[93m37[0m - [91merror[0m[90m TS1005: [0m';' expected.
+#14 11.89 
+#14 11.89 [7m801[0m                             <p style="text-align:center;font-size:9px" >
+#14 11.89 [7m   [0m [91m                                    ~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m33[0m - [91merror[0m[90m TS2304: [0mCannot find name 'Esta'.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                ~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m38[0m - [91merror[0m[90m TS1005: [0m';' expected.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                     ~~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m38[0m - [91merror[0m[90m TS2304: [0mCannot find name 'factura'.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                     ~~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m46[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                             ~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m46[0m - [91merror[0m[90m TS2304: [0mCannot find name 'fue'.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                             ~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m50[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                                 ~~~~~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m50[0m - [91merror[0m[90m TS2304: [0mCannot find name 'autorizada'.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                                 ~~~~~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m61[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                                            ~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m61[0m - [91merror[0m[90m TS2304: [0mCannot find name 'por'.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                                            ~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m65[0m - [91merror[0m[90m TS2304: [0mCannot find name 'AFIP'.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                                                ~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m72[0m - [91merror[0m[90m TS2304: [0mCannot find name 'Consulte'.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                                                       ~~~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m81[0m - [91merror[0m[90m TS1005: [0m';' expected.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                                                                ~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m81[0m - [91merror[0m[90m TS2304: [0mCannot find name 'su'.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                                                                ~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m84[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                                                                   ~~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m84[0m - [91merror[0m[90m TS2304: [0mCannot find name 'validez'.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                                                                   ~~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m92[0m - [91merror[0m[90m TS1434: [0mUnexpected keyword or identifier.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                                                                           ~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m92[0m - [91merror[0m[90m TS2304: [0mCannot find name 'en'.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                                                                           ~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m95[0m - [91merror[0m[90m TS2304: [0mCannot find name 'www'.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                                                                              ~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m95[0m - [91merror[0m[90m TS2365: [0mOperator '<' cannot be applied to types 'boolean' and 'RegExp'.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                                                                              ~~~~~~~~~~~~~~~[0m
+#14 11.89 [7m803[0m                                     </p>
+#14 11.89 [7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+#14 11.89 [7m804[0m                                     </div>
+#14 11.89 [7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m95[0m - [91merror[0m[90m TS2365: [0mOperator '<' cannot be applied to types 'boolean' and 'RegExp'.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                                                                              ~~~~~~~~~~~~~~~[0m
+#14 11.89 [7m803[0m                                     </p>
+#14 11.89 [7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+#14 11.89 [7m804[0m                                     </div>
+#14 11.89 [7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+#14 11.89 [7m805[0m                                     </div>
+#14 11.89 [7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m802[0m:[93m95[0m - [91merror[0m[90m TS2365: [0mOperator '<' cannot be applied to types 'boolean' and 'RegExp'.
+#14 11.89 
+#14 11.89 [7m802[0m                                 Esta factura fue autorizada por AFIP - Consulte su validez en www.afip.gob.ar
+#14 11.89 [7m   [0m [91m                                                                                              ~~~~~~~~~~~~~~~[0m
+#14 11.89 [7m803[0m                                     </p>
+#14 11.89 [7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+#14 11.89 [7m...[0m 
+#14 11.89 [7m805[0m                                     </div>
+#14 11.89 [7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+#14 11.89 [7m806[0m                                     </body>
+#14 11.89 [7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m803[0m:[93m38[0m - [91merror[0m[90m TS1161: [0mUnterminated regular expression literal.
+#14 11.89 
+#14 11.89 [7m803[0m                                     </p>
+#14 11.89 [7m   [0m [91m                                     ~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m804[0m:[93m38[0m - [91merror[0m[90m TS1161: [0mUnterminated regular expression literal.
+#14 11.89 
+#14 11.89 [7m804[0m                                     </div>
+#14 11.89 [7m   [0m [91m                                     ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m805[0m:[93m38[0m - [91merror[0m[90m TS1161: [0mUnterminated regular expression literal.
+#14 11.89 
+#14 11.89 [7m805[0m                                     </div>
+#14 11.89 [7m   [0m [91m                                     ~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m806[0m:[93m38[0m - [91merror[0m[90m TS1161: [0mUnterminated regular expression literal.
+#14 11.89 
+#14 11.89 [7m806[0m                                     </body>
+#14 11.89 [7m   [0m [91m                                     ~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m807[0m:[93m38[0m - [91merror[0m[90m TS1161: [0mUnterminated regular expression literal.
+#14 11.89 
+#14 11.89 [7m807[0m                                     </html>
+#14 11.89 [7m   [0m [91m                                     ~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m807[0m:[93m38[0m - [91merror[0m[90m TS2349: [0mThis expression is not callable.
+#14 11.89   Type 'RegExp' has no call signatures.
+#14 11.89 
+#14 11.89 [7m807[0m                                     </html>
+#14 11.89 [7m   [0m [91m                                     ~~~~~~[0m
+#14 11.89 [96msrc/wholesale/pdf-generator.service.ts[0m:[93m811[0m:[93m1[0m - [91merror[0m[90m TS1160: [0mUnterminated template literal.
+#14 11.89 
+#14 11.89 [7m811[0m 
+#14 11.89 [7m   [0m [91m[0m
+#14 11.89 [96msrc/wholesale/wholesale-invoice.service.ts[0m:[93m238[0m:[93m25[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'observations' does not exist in type '(Without<SaleUpdateInput, SaleUncheckedUpdateInput> & SaleUncheckedUpdateInput) | (Without<...> & SaleUpdateInput)'.
+#14 11.89 
+#14 11.89 [7m238[0m                         observations: `Ref Pago: ${dto.paymentReference}`
+#14 11.89 [7m   [0m [91m                        ~~~~~~~~~~~~[0m
+#14 11.89 
+#14 11.89   [96mnode_modules/.prisma/client/index.d.ts[0m:[93m13820[0m:[93m5[0m
+#14 11.89     [7m13820[0m     data: XOR<SaleUpdateInput, SaleUncheckedUpdateInput>
+#14 11.89     [7m     [0m [96m    ~~~~[0m
+#14 11.89     The expected type comes from property 'data' which is declared here on type '{ select?: SaleSelect<DefaultArgs>; include?: SaleInclude<DefaultArgs>; data: (Without<SaleUpdateInput, SaleUncheckedUpdateInput> & SaleUncheckedUpdateInput) | (Without<...> & SaleUpdateInput); where: SaleWhereUniqueInput; }'
+#14 11.89 [96msrc/wholesale/wholesale-invoice.service.ts[0m:[93m420[0m:[93m25[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'observations' does not exist in type '(Without<SaleUpdateInput, SaleUncheckedUpdateInput> & SaleUncheckedUpdateInput) | (Without<...> & SaleUpdateInput)'.
+#14 11.89 
+#14 11.89 [7m420[0m                         observations: `Ref Pago: ${dto.paymentReference}`
+#14 11.89 [7m   [0m [91m                        ~~~~~~~~~~~~[0m
+#14 11.89 
+#14 11.89   [96mnode_modules/.prisma/client/index.d.ts[0m:[93m13820[0m:[93m5[0m
+#14 11.89     [7m13820[0m     data: XOR<SaleUpdateInput, SaleUncheckedUpdateInput>
+#14 11.89     [7m     [0m [96m    ~~~~[0m
+#14 11.89     The expected type comes from property 'data' which is declared here on type '{ select?: SaleSelect<DefaultArgs>; include?: SaleInclude<DefaultArgs>; data: (Without<SaleUpdateInput, SaleUncheckedUpdateInput> & SaleUncheckedUpdateInput) | (Without<...> & SaleUpdateInput); where: SaleWhereUniqueInput; }'
+#14 11.89 
+#14 11.89 Found 71 error(s).
+#14 11.89 
+#14 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+------
+ > [builder 9/9] RUN npm run build:
+11.89 [7m420[0m                         observations: `Ref Pago: ${dto.paymentReference}`
+11.89 [7m   [0m [91m                        ~~~~~~~~~~~~[0m
+11.89 
+11.89   [96mnode_modules/.prisma/client/index.d.ts[0m:[93m13820[0m:[93m5[0m
+11.89     [7m13820[0m     data: XOR<SaleUpdateInput, SaleUncheckedUpdateInput>
+11.89     [7m     [0m [96m    ~~~~[0m
+11.89     The expected type comes from property 'data' which is declared here on type '{ select?: SaleSelect<DefaultArgs>; include?: SaleInclude<DefaultArgs>; data: (Without<SaleUpdateInput, SaleUncheckedUpdateInput> & SaleUncheckedUpdateInput) | (Without<...> & SaleUpdateInput); where: SaleWhereUniqueInput; }'
+11.89 
+11.89 Found 71 error(s).
+11.89 
+------
+Dockerfile:22
+
+--------------------
+
+  20 |     
+
+  21 |     # Build the application
+
+  22 | >>> RUN npm run build
+
+  23 |     
+
+  24 |     # --- Production Stage ---
+
+--------------------
+
+failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+

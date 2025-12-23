@@ -1,0 +1,1617 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- IDENTITY ---
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // Hashed
+  name      String?
+  role      String   @default("USER") // ADMIN, USER
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  shifts    CashShift[]
+  sales     Sale[]
+  
+  // Bot Integration
+  telegramId String? @unique
+}
+
+// --- MASTER DATA ---
+
+model Product {
+  id          String   @id @default(uuid())
+  sku         String   @unique // Internal code
+  ean         String?  @unique // Barcode (EAN-13)
+  name        String
+  description String?
+  imageUrl    String?
+  taxRate     Decimal  @default(21.0) // VAT
+  basePrice   Decimal  @db.Decimal(10, 2)
+  wholesalePrice Decimal? @db.Decimal(10, 2)
+  costPrice   Decimal  @default(0) @db.Decimal(10, 2)
+  minStock    Int      @default(0)
+  
+  // Unit of measure
+  baseUnit      String   @default("UNIDAD") // UNIDAD, CAJA, LITRO, KG
+  unitsPerCase  Int?     // Cantidad de unidades por caja (ej: 12)
+  volumePerUnit Decimal? @db.Decimal(10, 3) // Litros por unidad (ej: 0.5 para 500ml)
+  
+  category    String?
+  brand       String?
+  
+  // SEO-friendly URL slug (auto-generated from name)
+  slug        String?  @unique
+  
+  // Shipping dimensions (for Andreani)
+  weight      Decimal? @db.Decimal(10, 2) // Weight in grams
+  height      Decimal? @db.Decimal(10, 2) // Height in cm
+  width       Decimal? @db.Decimal(10, 2) // Width in cm
+  depth       Decimal? @db.Decimal(10, 2) // Depth in cm
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  inventoryItems InventoryItem[]
+  saleItems      SaleItem[]
+  purchaseItems  PurchaseItem[]
+  unitConversions UnitConversion[]
+
+  @@index([sku, ean])
+  @@index([category])
+  @@index([brand])
+  @@index([slug])
+}
+
+// Unit conversions for products (e.g., 1 CAJA = 12 UNIDAD)
+model UnitConversion {
+  id          String  @id @default(uuid())
+  productId   String
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  fromUnit    String  // CAJA, PACK, SIXPACK
+  toUnit      String  // UNIDAD (always converts to base)
+  factor      Decimal @db.Decimal(10, 4) // 1 CAJA = 12 UNIDAD -> factor = 12
+  
+  @@unique([productId, fromUnit])
+  @@index([productId])
+}
+
+model Supplier {
+  id          String   @id @default(uuid())
+  name        String
+  taxId       String?  @unique // CUIT/RUT
+  email       String?
+  phone       String?
+  address     String?
+  
+  createdAt   DateTime @default(now())
+
+  // Relations
+  purchases   PurchaseOrder[]
+}
+
+
+
+model InventoryItem {
+  id             String    @id @default(uuid())
+  productId      String
+  product        Product   @relation(fields: [productId], references: [id])
+  
+  batchNumber    String?   // Lote
+  expirationDate DateTime? // Vencimiento
+  
+  locationZone   String    // Bin Location: "A-01-02"
+  quantity       Int       @default(0)
+
+  warehouseId    String?   // Optional during migration, strictly required later
+  warehouse      Warehouse? @relation(fields: [warehouseId], references: [id])
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([productId, batchNumber, locationZone, warehouseId]) // Unique Constraint for precise tracking
+  @@index([expirationDate])
+}
+
+model InventoryTransaction {
+  id          String          @id @default(uuid())
+  productId   String
+  quantity    Int             // Positive (IN) or Negative (OUT)
+  type        TransactionType // SALE, RECEIPT, ADJUSTMENT, RETURN
+  referenceId String?         // ID of Sale or PO
+  
+  createdAt   DateTime        @default(now())
+  
+  userId      String?         // Who performed the action
+}
+
+enum TransactionType {
+  SALE
+  SALE_DEDUCTION
+  PURCHASE_RECEIPT
+  ADJUSTMENT
+  TRANSFER
+  RETURN
+}
+
+// --- SALES & COMMERCE ---
+
+
+
+enum DeliveryMethod {
+  PICKUP
+  SHIPPING
+}
+
+enum DocumentType {
+  SALE
+  BUDGET
+  CONSIGNMENT
+  CREDIT_NOTE
+  DEBIT_NOTE
+}
+
+
+
+
+model Sale {
+  id            String     @id @default(uuid())
+  code          String     @unique // Visible Receipt ID
+  channel       SalesChannel
+  status        SaleStatus @default(COMPLETED)
+  deliveryMethod DeliveryMethod @default(PICKUP)
+  
+  documentType  DocumentType @default(SALE) // Tipo de documento
+  
+  // Invoice info is linked via the Invoice model if fiscal
+  // For internal 'Factura X', we can assume no linked Fiscal Invoice, or an Invoice of type FACTURA_X
+  
+  totalAmount   Decimal    @db.Decimal(12, 2)
+  discountAmount Decimal   @default(0) @db.Decimal(12, 2)
+  taxAmount     Decimal    @db.Decimal(12, 2)
+  shippingFee   Decimal    @default(0) @db.Decimal(12, 2)
+  
+  // Tracking info for shipping
+  trackingNumber String?
+  trackingUrl    String?
+  
+  customerId    String?
+  customer      Customer?  @relation(fields: [customerId], references: [id])
+  
+  userId        String?   // Seller/Cashier
+  user          User?     @relation(fields: [userId], references: [id])
+  
+  fiscalNumber  String? // Legacy
+  
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt @default(now())
+  
+  observations  String?
+
+  items         SaleItem[]
+  payments      Payment[]
+  
+  invoice       Invoice?
+  
+  @@index([createdAt])
+  @@index([customerId])
+  @@index([userId])
+  @@index([documentType])
+}
+
+model SaleItem {
+  id          String  @id @default(uuid())
+  saleId      String
+  sale        Sale    @relation(fields: [saleId], references: [id])
+  
+  productId   String
+  product     Product @relation(fields: [productId], references: [id])
+  
+  quantity    Int
+  unitPrice   Decimal @db.Decimal(10, 2)
+  totalPrice  Decimal @db.Decimal(10, 2)
+}
+
+enum SalesChannel {
+  POS
+  ECOMMERCE
+  B2B
+}
+
+enum SaleStatus {
+  PENDING
+  PAID
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+model Payment {
+  id        String   @id @default(uuid())
+  saleId    String
+  sale      Sale     @relation(fields: [saleId], references: [id])
+  
+  method    String   // CASH, CARD, QR, ACCOUNT
+  amount    Decimal  @db.Decimal(12, 2)
+  
+  createdAt DateTime @default(now())
+}
+
+// --- CUPONES DE DESCUENTO ---
+
+model Coupon {
+  id          String   @id @default(uuid())
+  code        String   @unique    // Código visible: VUELVE15, BIENVENIDO10
+  name        String               // Nombre interno
+  description String?
+  
+  discountType   DiscountType      // PERCENTAGE, FIXED_AMOUNT
+  discountValue  Decimal  @db.Decimal(10, 2) // 15 para 15%, 500 para $500
+  
+  minOrderValue  Decimal? @db.Decimal(10, 2) // Mínimo de compra para aplicar
+  maxDiscount    Decimal? @db.Decimal(10, 2) // Tope máximo de descuento (solo para %)
+  
+  usageLimit     Int?     // Límite total de usos (null = ilimitado)
+  usageCount     Int      @default(0) // Usos actuales
+  perCustomerLimit Int?   // Límite por cliente (null = ilimitado)
+  
+  validFrom      DateTime @default(now())
+  validUntil     DateTime?
+  
+  isActive       Boolean  @default(true)
+  
+  // Restricciones opcionales
+  applicableCategories String[] // Categorías donde aplica (vacío = todas)
+  applicableProducts   String[] // IDs de productos específicos (vacío = todos)
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  usages     CouponUsage[]
+  
+  @@index([code])
+  @@index([isActive, validUntil])
+}
+
+model CouponUsage {
+  id         String   @id @default(uuid())
+  couponId   String
+  coupon     Coupon   @relation(fields: [couponId], references: [id])
+  
+  customerId String?
+  saleId     String?
+  
+  discountApplied Decimal @db.Decimal(10, 2)
+  
+  usedAt     DateTime @default(now())
+  
+  @@index([customerId])
+  @@index([couponId])
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+
+// --- PURCHASING ---
+
+model PurchaseOrder {
+  id          String        @id @default(uuid())
+  supplierId  String
+  supplier    Supplier      @relation(fields: [supplierId], references: [id])
+  
+  status      PurchaseStatus @default(DRAFT)
+  totalAmount Decimal       @db.Decimal(12, 2)
+  
+  createdAt   DateTime      @default(now())
+  expectedDate DateTime?
+
+  items       PurchaseItem[]
+}
+
+model PurchaseItem {
+  id        String        @id @default(uuid())
+  orderId   String
+  order     PurchaseOrder @relation(fields: [orderId], references: [id])
+  
+  productId String
+  product   Product       @relation(fields: [productId], references: [id])
+  
+  quantity  Int
+  costPrice Decimal       @db.Decimal(10, 2) // Precio pagado
+  
+  // "Ganar a la Compra" - Tracking de ahorros
+  standardCost   Decimal?  @db.Decimal(10, 2) // Costo estándar al momento de la compra
+  purchaseSaving Decimal?  @db.Decimal(10, 2) // Ahorro calculado: (standardCost - costPrice) * quantity
+}
+
+enum PurchaseStatus {
+  DRAFT
+  ORDERED
+  RECEIVED
+  CANCELLED
+}
+
+// --- FINANCIALS ---
+
+model Expense {
+  id          String   @id @default(uuid())
+  category    String   // Rent, Utilities, Payroll, etc.
+  description String
+  amount      Decimal  @db.Decimal(12, 2)
+  date        DateTime @default(now())
+  
+  userId      String?  // Who recorded it
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?  @unique
+  taxId     String?  // CUIT/CUIL
+  password  String?  // Hashed, optional for POS customers, required for Web login
+  phone     String?
+  address   String?
+  city      String?
+  zipCode   String?
+  type      CustomerType @default(RETAIL)
+  
+  // Price List Assignment
+  priceListId String?
+  priceList   PriceList? @relation(fields: [priceListId], references: [id])
+  
+  // ========================================
+  // WHOLESALE B2B FIELDS (Phase W1)
+  // ========================================
+  businessName     String?          // Razón social (para mayoristas)
+  cuit             String?          // CUIT empresa (diferente de taxId personal)
+  taxCondition     TaxCondition?    // Condición IVA del cliente
+  
+  // Credit Management
+  creditLimit      Decimal?         @db.Decimal(12, 2) // Límite de crédito
+  creditUsed       Decimal          @default(0) @db.Decimal(12, 2) // Crédito utilizado
+  paymentTermDays  Int              @default(0) // Días de plazo de pago (0 = contado)
+  
+  // Commercial Terms
+  discountPercent  Decimal?         @db.Decimal(5, 2) // Descuento especial %
+  relationStatus   RelationStatus   @default(ACTIVE) // Estado de la relación comercial
+  salesRepId       String?          // ID del vendedor asignado
+  
+  // Notes
+  notes            String?          // Notas internas sobre el cliente
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  sales     Sale[]
+  returnablePackaging ReturnablePackaging[]
+  
+  // CRM Relations
+  score     CustomerScore?
+  loyalty   LoyaltyPoints?
+  
+  // B2B Relations
+  quotations     Quotation[]
+  consignments   ConsignmentSale[]
+  
+  @@index([type])
+  @@index([relationStatus])
+  @@index([cuit])
+}
+
+enum CustomerType {
+  RETAIL
+  WHOLESALE
+}
+
+enum RelationStatus {
+  ACTIVE       // Cliente activo, sin problemas
+  AT_RISK      // En riesgo de pérdida (detectado por IA)
+  INACTIVE     // Sin actividad por tiempo prolongado
+  BLOCKED      // Bloqueado por deuda o problema
+}
+
+// ========================================
+// WHOLESALE B2B - QUOTATIONS (Phase W2)
+// ========================================
+
+model Quotation {
+  id              String          @id @default(uuid())
+  code            String          @unique  // PRES-2024-00001
+  
+  customerId      String
+  customer        Customer        @relation(fields: [customerId], references: [id])
+  
+  status          QuotationStatus @default(DRAFT)
+  validUntil      DateTime        // Fecha de expiración
+  
+  // Items
+  items           QuotationItem[]
+  
+  // Totals
+  subtotal        Decimal         @db.Decimal(12, 2)
+  taxAmount       Decimal         @db.Decimal(12, 2)
+  discountAmount  Decimal         @default(0) @db.Decimal(12, 2)
+  total           Decimal         @db.Decimal(12, 2)
+  
+  // Conversion tracking
+  convertedToSaleId        String?
+  convertedToConsignmentId String?
+  
+  // Metadata
+  notes           String?
+  termsAndConditions String?  // Términos y condiciones
+  createdBy       String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  @@index([customerId])
+  @@index([status])
+  @@index([validUntil])
+  @@index([code])
+}
+
+model QuotationItem {
+  id          String    @id @default(uuid())
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  
+  productId   String
+  productName String    // Snapshot del nombre al momento de crear
+  productSku  String?   // Snapshot del SKU
+  quantity    Int
+  unitPrice   Decimal   @db.Decimal(10, 2)
+  discount    Decimal   @default(0) @db.Decimal(5, 2)  // % descuento por ítem
+  totalPrice  Decimal   @db.Decimal(10, 2)
+  
+  @@index([quotationId])
+  @@index([productId])
+}
+
+enum QuotationStatus {
+  DRAFT       // Borrador
+  SENT        // Enviado al cliente
+  ACCEPTED    // Aceptado por cliente
+  REJECTED    // Rechazado
+  EXPIRED     // Expirado (validUntil pasada)
+  INVOICED    // Convertido a factura
+  CONVERTED   // Convertido a consignación
+}
+
+// Quotation number sequence
+model QuotationSequence {
+  id            String   @id @default(uuid())
+  year          Int
+  lastNumber    Int      @default(0)
+  
+  @@unique([year])
+}
+
+// ========================================
+// WHOLESALE B2B - CONSIGNMENTS (Phase W3)
+// ========================================
+
+model ConsignmentSale {
+  id              String              @id @default(uuid())
+  code            String              @unique  // CONS-2024-00001
+  
+  customerId      String
+  customer        Customer            @relation(fields: [customerId], references: [id])
+  
+  quotationId     String?             // Opcional: desde presupuesto
+  
+  status          ConsignmentStatus   @default(ACTIVE)
+  
+  // Items entregados
+  items           ConsignmentItem[]
+  
+  // Tracking
+  deliveredAt     DateTime            @default(now())
+  closedAt        DateTime?
+  
+  // Returns
+  returns         ConsignmentReturn[]
+  
+  // Value tracking (no impacta finanzas hasta facturar)
+  totalValue      Decimal             @db.Decimal(12, 2)
+  invoicedValue   Decimal             @default(0) @db.Decimal(12, 2)
+  returnedValue   Decimal             @default(0) @db.Decimal(12, 2)
+  
+  // Metadata
+  notes           String?
+  createdBy       String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  
+  @@index([customerId])
+  @@index([status])
+  @@index([quotationId])
+  @@index([code])
+}
+
+model ConsignmentItem {
+  id                String          @id @default(uuid())
+  consignmentId     String
+  consignment       ConsignmentSale @relation(fields: [consignmentId], references: [id], onDelete: Cascade)
+  
+  productId         String
+  productName       String          // Snapshot
+  productSku        String?         // Snapshot
+  
+  quantityDelivered Int             // Cantidad entregada inicialmente
+  quantityReturned  Int             @default(0) // Cantidad devuelta
+  quantityInvoiced  Int             @default(0) // Cantidad facturada
+  
+  unitPrice         Decimal         @db.Decimal(10, 2)
+  
+  @@unique([consignmentId, productId])
+  @@index([productId])
+}
+
+enum ConsignmentStatus {
+  ACTIVE              // Mercadería en manos del cliente
+  PARTIALLY_RETURNED  // Alguna devolución parcial
+  PARTIALLY_INVOICED  // Alguna factura parcial
+  CLOSED              // Completamente cerrada (todo facturado o devuelto)
+}
+
+// Consignment number sequence
+model ConsignmentSequence {
+  id            String   @id @default(uuid())
+  year          Int
+  lastNumber    Int      @default(0)
+  
+  @@unique([year])
+}
+
+// ========================================
+// WHOLESALE B2B - CONSIGNMENT RETURNS (Phase W4)
+// ========================================
+
+model ConsignmentReturn {
+  id              String              @id @default(uuid())
+  code            String              @unique  // DEV-2024-00001
+  
+  consignmentId   String
+  consignment     ConsignmentSale     @relation(fields: [consignmentId], references: [id])
+  
+  items           ConsignmentReturnItem[]
+  
+  // Totals
+  totalValue      Decimal             @db.Decimal(12, 2)
+  
+  // Metadata
+  reason          String?
+  receivedBy      String?
+  processedAt     DateTime            @default(now())
+  createdBy       String?
+  createdAt       DateTime            @default(now())
+  
+  @@index([consignmentId])
+  @@index([code])
+}
+
+model ConsignmentReturnItem {
+  id          String              @id @default(uuid())
+  returnId    String
+  return      ConsignmentReturn   @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  
+  productId   String
+  productName String
+  quantity    Int
+  unitPrice   Decimal             @db.Decimal(10, 2)
+  condition   ReturnCondition     @default(GOOD)
+  
+  @@index([returnId])
+}
+
+enum ReturnCondition {
+  GOOD        // Reingresa al stock normal
+  DAMAGED     // No reingresa, se registra como pérdida
+}
+
+// Return number sequence
+model ReturnSequence {
+  id            String   @id @default(uuid())
+  year          Int
+  lastNumber    Int      @default(0)
+  
+  @@unique([year])
+}
+
+// --- AUDIT ---
+
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  action      String   // CREATE, UPDATE, DELETE, LOGIN
+  resource    String   // Product, User, etc.
+  details     String?  // JSON or text description
+  ipAddress   String?
+  
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model CashShift {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  startTime   DateTime @default(now())
+  endTime     DateTime?
+  
+  initialCash Decimal  @db.Decimal(10, 2)
+  finalCash   Decimal? @db.Decimal(10, 2)
+  expectedCash Decimal? @db.Decimal(10, 2)
+  difference   Decimal? @db.Decimal(10, 2)
+  
+  status      String   @default("OPEN") // OPEN, CLOSED
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+}
+
+// --- LOGISTICS V2 ---
+
+model Warehouse {
+  id        String        @id @default(uuid())
+  name      String
+  type      WarehouseType @default(DEPOT)
+  address   String?
+  
+  items     InventoryItem[]
+  
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+enum WarehouseType {
+  DEPOT
+  STORE
+  VEHICLE
+}
+
+model ReturnablePackaging {
+  id         String   @id @default(uuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  
+  type       String   // "BOTELLA_1L", "CAJON_12"
+  quantity   Int      @default(0) // Balance: Positive = Customer has them
+  
+  updatedAt  DateTime @updatedAt
+  
+  @@unique([customerId, type])
+}
+
+
+model Campaign {
+  id             String   @id @default(uuid())
+  subject        String
+  content        String
+  segment        String
+  recipientCount Int
+  status         String
+  sentAt         DateTime @default(now())
+}
+
+// --- INTEGRATIONS ---
+
+model IntegrationCredential {
+  id          String   @id @default(uuid())
+  provider    String   @unique // mercadolibre, mercadopago, arca, andreani, rappi, pedidosya
+  
+  accessToken String?  // OAuth token (encrypted)
+  refreshToken String?
+  clientId    String?
+  clientSecret String?
+  publicKey   String?  // For MP
+  
+  // Provider-specific fields
+  accountId   String?  // ML User ID, MP merchant ID
+  expiresAt   DateTime?
+  
+  enabled     Boolean  @default(false)
+  lastSync    DateTime?
+  lastError   String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Mercado Libre product mapping
+model MercadoLibreListing {
+  id          String   @id @default(uuid())
+  productId   String   @unique
+  mlItemId    String   @unique // MLA... ID
+  
+  status      String   @default("active") // active, paused, closed
+  permalink   String?
+  
+  lastSync    DateTime?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// --- PRICE LISTS ---
+
+model PriceList {
+  id          String   @id @default(uuid())
+  name        String   @unique // "Minorista", "Mayorista", "VIP"
+  description String?
+  isDefault   Boolean  @default(false) // One list can be default
+  markup      Decimal? @db.Decimal(5, 2) // Optional % markup over cost
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  items       PriceListItem[]
+  customers   Customer[]
+}
+
+model PriceListItem {
+  id          String    @id @default(uuid())
+  priceListId String
+  priceList   PriceList @relation(fields: [priceListId], references: [id], onDelete: Cascade)
+  
+  productId   String
+  
+  price       Decimal   @db.Decimal(10, 2)
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@unique([priceListId, productId])
+  @@index([productId])
+}
+
+// --- FISCAL ARGENTINA ---
+
+enum InvoiceType {
+  FACTURA_A      // RI -> RI
+  FACTURA_B      // RI -> CF/Exento
+  FACTURA_C      // Monotributo -> CF
+  FACTURA_M      // RI control reforzado
+  FACTURA_E      // Exportación
+  NOTA_CREDITO_A
+  NOTA_CREDITO_B
+  NOTA_CREDITO_C
+  NOTA_DEBITO_A
+  NOTA_DEBITO_B
+  NOTA_DEBITO_C
+  FACTURA_X      // Factura X (Interna)
+  RECIBO_X       // Sin valor fiscal
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PENDING_CAE    // Waiting for AFIP response
+  AUTHORIZED     // CAE received
+  REJECTED       // AFIP rejected
+  CANCELLED      // Voided
+}
+
+enum TaxCondition {
+  RESPONSABLE_INSCRIPTO
+  MONOTRIBUTISTA
+  CONSUMIDOR_FINAL
+  EXENTO
+  NO_RESPONSABLE
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  
+  // Link to sale
+  saleId        String?       @unique
+  sale          Sale?         @relation(fields: [saleId], references: [id])
+  
+  // Invoice identification
+  type          InvoiceType
+  status        InvoiceStatus @default(DRAFT)
+  pointOfSale   Int           // Punto de venta (1-99999)
+  number        Int           // Número correlativo
+  
+  // Dates
+  invoiceDate   DateTime      @default(now())
+  dueDate       DateTime?     // Vencimiento de pago
+  
+  // Customer fiscal data
+  customerName  String
+  customerTaxId String?       // CUIT/CUIL/DNI
+  customerTaxCondition TaxCondition @default(CONSUMIDOR_FINAL)
+  customerAddress String?
+  
+  // Amounts
+  subtotal      Decimal       @db.Decimal(12, 2)
+  taxAmount     Decimal       @db.Decimal(12, 2) // IVA
+  otherTaxes    Decimal       @default(0) @db.Decimal(12, 2) // IIBB, percepciones
+  total         Decimal       @db.Decimal(12, 2)
+  
+  // CAE (Código de Autorización Electrónico)
+  cae           String?       // 14 digits
+  caeExpiration DateTime?     // Vencimiento CAE
+  
+  // AFIP response
+  afipResult    String?       // OK, REJECTED, etc
+  afipMessage   String?       // Error message if rejected
+  afipRequestXml  String?     @db.Text // Request XML for audit
+  afipResponseXml String?     @db.Text // Response XML for audit
+  
+  // Related invoice (for NC/ND)
+  relatedInvoiceId String?
+  relatedInvoice Invoice? @relation("RelatedInvoices", fields: [relatedInvoiceId], references: [id])
+  relatedInvoices Invoice[] @relation("RelatedInvoices")
+  
+  // Metadata
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  @@unique([pointOfSale, number, type])
+  @@index([saleId])
+  @@index([customerTaxId])
+  @@index([cae])
+  @@index([invoiceDate])
+}
+
+// AFIP Certificate storage
+model AfipCertificate {
+  id            String   @id @default(uuid())
+  name          String   // Descriptive name
+  cuit          String   // Company CUIT
+  environment   String   // 'production' or 'homologacion'
+  
+  certificatePfx Bytes   // .pfx file content
+  certificatePassword String // Encrypted password
+  
+  tokenExpiration DateTime?
+  lastToken     String?  @db.Text
+  lastSign      String?  @db.Text
+  
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Invoice number sequence
+model InvoiceSequence {
+  id            String   @id @default(uuid())
+  pointOfSale   Int
+  invoiceType   InvoiceType
+  lastNumber    Int      @default(0)
+  
+  @@unique([pointOfSale, invoiceType])
+}
+
+// IIBB (Ingresos Brutos) Configuration per jurisdiction
+model IIBBConfig {
+  id            String   @id @default(uuid())
+  
+  jurisdiction  String   // Province code: CABA, BA, CORDOBA, etc.
+  jurisdictionName String // Full name
+  
+  // Perception rates
+  perceptionRate    Decimal @db.Decimal(5, 4) // e.g., 0.03 = 3%
+  perceptionMinimum Decimal @default(0) @db.Decimal(10, 2) // Min amount to apply
+  
+  // Retention rates (when applicable)
+  retentionRate     Decimal @default(0) @db.Decimal(5, 4)
+  
+  // Activity code (for multi-activity businesses)
+  activityCode  String?
+  
+  isActive      Boolean  @default(true)
+  validFrom     DateTime @default(now())
+  validTo       DateTime?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@unique([jurisdiction, activityCode])
+  @@index([jurisdiction])
+}
+
+// IIBB Transaction record
+model IIBBTransaction {
+  id            String   @id @default(uuid())
+  
+  invoiceId     String
+  jurisdiction  String
+  
+  baseAmount    Decimal  @db.Decimal(12, 2) // Amount perception was calculated on
+  rate          Decimal  @db.Decimal(5, 4)  // Rate applied
+  amount        Decimal  @db.Decimal(12, 2) // Perception amount
+  
+  type          String   @default("PERCEPTION") // PERCEPTION or RETENTION
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([invoiceId])
+  @@index([jurisdiction])
+  @@index([createdAt])
+}
+
+// --- REMITOS (Delivery Notes) ---
+
+enum RemitStatus {
+  DRAFT
+  PENDING      // Ready for delivery
+  IN_TRANSIT   // Out for delivery
+  DELIVERED    // Confirmed delivery
+  CANCELLED
+}
+
+model Remit {
+  id              String      @id @default(uuid())
+  
+  // Remit identification
+  pointOfSale     Int         // Punto de emisión
+  number          Int         // Número correlativo
+  letter          String      @default("X") // X = sin valor fiscal, R = remito
+  
+  // Status
+  status          RemitStatus @default(DRAFT)
+  
+  // Dates
+  issueDate       DateTime    @default(now())
+  deliveryDate    DateTime?   // Estimated or actual
+  
+  // Related documents
+  saleId          String?
+  invoiceId       String?
+  
+  // Origin
+  originAddress   String
+  originCity      String?
+  originProvince  String?
+  
+  // Destination
+  customerName    String
+  customerTaxId   String?
+  destinationAddress String
+  destinationCity String?
+  destinationProvince String?
+  
+  // Transport
+  transportCompany String?
+  vehiclePlate    String?
+  driverName      String?
+  driverDNI       String?
+  
+  // Items (JSON for flexibility)
+  items           Json        // Array of { productId, productName, sku, quantity, unit }
+  
+  // Totals
+  totalPackages   Int         @default(0)
+  totalWeight     Decimal?    @db.Decimal(10, 2) // kg
+  
+  // Signatures/Proof
+  receiverName    String?
+  receiverDNI     String?
+  receivedAt      DateTime?
+  signature       String?     // Base64 or URL
+  
+  // Notes
+  observations    String?
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  @@unique([pointOfSale, number, letter])
+  @@index([saleId])
+  @@index([invoiceId])
+  @@index([customerTaxId])
+  @@index([issueDate])
+  @@index([status])
+}
+
+// Remit number sequence
+model RemitSequence {
+  id            String   @id @default(uuid())
+  pointOfSale   Int
+  letter        String   @default("X")
+  lastNumber    Int      @default(0)
+  
+  @@unique([pointOfSale, letter])
+}
+
+// --- CRM & FIDELIZACIÓN ---
+
+enum CustomerLevel {
+  BRONCE
+  PLATA
+  ORO
+  VIP
+}
+
+enum ActivityType {
+  PURCHASE
+  PAYMENT
+  RETURN
+  COMPLAINT
+  INQUIRY
+  DELIVERY
+  NOTE
+  POINTS_EARNED
+  POINTS_REDEEMED
+  LEVEL_CHANGE
+}
+
+// RFM Scoring for customer segmentation
+model CustomerScore {
+  id            String   @id @default(uuid())
+  customerId    String   @unique
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  // RFM Values
+  recency       Int      // Days since last purchase
+  frequency     Int      // Number of purchases in period
+  monetary      Decimal  @db.Decimal(12, 2) // Total spent in period
+  
+  // RFM Scores (1-5)
+  recencyScore  Int      @default(1)
+  frequencyScore Int     @default(1)
+  monetaryScore Int      @default(1)
+  
+  // Combined score and segment
+  totalScore    Int      @default(3)
+  segment       String   @default("NEW") // CHAMPIONS, LOYAL, AT_RISK, LOST, etc.
+  
+  // Customer level based on scoring
+  level         CustomerLevel @default(BRONCE)
+  
+  // Period analyzed
+  periodStart   DateTime
+  periodEnd     DateTime
+  
+  calculatedAt  DateTime @default(now())
+  
+  @@index([customerId])
+  @@index([segment])
+  @@index([level])
+}
+
+// Customer Activity Timeline
+model CustomerActivity {
+  id            String       @id @default(uuid())
+  customerId    String
+  
+  type          ActivityType
+  title         String       // Short description
+  description   String?      // Detailed description
+  
+  // Related entities
+  saleId        String?
+  invoiceId     String?
+  ticketId      String?      // For complaints/inquiries
+  
+  // Metadata (flexible JSON)
+  metadata      Json?        // { amount, products, etc. }
+  
+  // Points if applicable
+  pointsChange  Int          @default(0) // Positive = earned, negative = redeemed
+  
+  createdAt     DateTime     @default(now())
+  createdBy     String?      // User ID who created this
+  
+  @@index([customerId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// Loyalty Points System
+model LoyaltyPoints {
+  id            String   @id @default(uuid())
+  customerId    String   @unique
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  // Current balance
+  currentPoints Int      @default(0)
+  lifetimePoints Int     @default(0) // Total ever earned
+  redeemedPoints Int     @default(0) // Total ever redeemed
+  
+  // Level tracking
+  level         CustomerLevel @default(BRONCE)
+  levelUpdatedAt DateTime @default(now())
+  
+  // Points expiration tracking
+  expiringPoints Int      @default(0)
+  expirationDate DateTime?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([customerId])
+  @@index([level])
+}
+
+// Loyalty Points Transaction History
+model PointsTransaction {
+  id            String   @id @default(uuid())
+  customerId    String
+  
+  type          String   // EARN, REDEEM, EXPIRE, ADJUST
+  points        Int      // Positive or negative
+  balance       Int      // Balance after transaction
+  
+  // Reference
+  saleId        String?
+  description   String
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([customerId])
+  @@index([createdAt])
+}
+
+// Level Benefits Configuration
+model LevelBenefit {
+  id            String        @id @default(uuid())
+  level         CustomerLevel
+  
+  // Benefits
+  discountPercent Decimal     @db.Decimal(5, 2) @default(0) // Extra discount
+  pointsMultiplier Decimal    @db.Decimal(3, 2) @default(1) // Points earn rate
+  freeDelivery    Boolean     @default(false)
+  prioritySupport Boolean     @default(false)
+  exclusiveOffers Boolean     @default(false)
+  
+  // Thresholds for level upgrade
+  minPoints       Int         @default(0)
+  minPurchases    Int         @default(0)
+  minSpend        Decimal     @db.Decimal(12, 2) @default(0)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@unique([level])
+}
+
+// Recompra Alerts Configuration
+model RecompraAlert {
+  id            String   @id @default(uuid())
+  customerId    String
+  
+  // Alert configuration
+  productId     String?  // Specific product or null for any
+  avgDaysBetween Int     // Average days between purchases
+  lastPurchase  DateTime
+  nextExpected  DateTime // Calculated expected next purchase
+  
+  // Alert status
+  alertSent     Boolean  @default(false)
+  alertSentAt   DateTime?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([customerId])
+  @@index([nextExpected])
+}
+
+// ===========================================
+// BLOG & CONTENT MANAGEMENT (PHASE 5)
+// ===========================================
+
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+  ARCHIVED
+}
+
+enum ContentType {
+  PRODUCT_ARTICLE
+  RECIPE
+  CULTURE
+  NEWS
+  GUIDE
+  INFOGRAPHIC
+}
+
+model BlogCategory {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  imageUrl    String?
+  parentId    String?
+  parent      BlogCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    BlogCategory[] @relation("CategoryHierarchy")
+  
+  posts       BlogPost[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([slug])
+}
+
+model BlogPost {
+  id              String      @id @default(uuid())
+  title           String
+  slug            String      @unique
+  excerpt         String?     @db.Text
+  content         String      @db.Text
+  contentType     ContentType @default(PRODUCT_ARTICLE)
+  status          BlogStatus  @default(DRAFT)
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?     @db.Text
+  metaKeywords    String?
+  ogImage         String?
+  schemaMarkup    Json?       // Schema.org JSON-LD
+  
+  // Media
+  featuredImage   String?
+  images          Json?       // Array of image URLs
+  
+  // Relations
+  categoryId      String?
+  category        BlogCategory? @relation(fields: [categoryId], references: [id])
+  authorId        String?
+  
+  // Linked products
+  productIds      String[]    // Array of product IDs mentioned
+  
+  // Stats
+  views           Int         @default(0)
+  shares          Int         @default(0)
+  
+  // Publishing
+  publishedAt     DateTime?
+  scheduledAt     DateTime?
+  
+  // AI Generation
+  aiGenerated     Boolean     @default(false)
+  aiPrompt        String?     @db.Text
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  @@index([slug])
+  @@index([status])
+  @@index([categoryId])
+  @@index([contentType])
+  @@index([publishedAt])
+}
+
+// Recipe model for cocktails and drinks
+model Recipe {
+  id              String      @id @default(uuid())
+  name            String
+  slug            String      @unique
+  description     String?     @db.Text
+  
+  // Details
+  difficulty      String      @default("FACIL") // FACIL, MEDIO, DIFICIL
+  prepTime        Int?        // Minutes
+  servings        Int?
+  
+  // Content
+  ingredients     Json        // Array of {productId?, name, quantity, unit}
+  steps           Json        // Array of {order, instruction, tip?}
+  tips            String?     @db.Text
+  
+  // Media
+  imageUrl        String?
+  videoUrl        String?
+  
+  // Classification
+  category        String?     // CLASICO, TROPICAL, SHOT, SIN_ALCOHOL
+  tags            String[]
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  
+  // Stats
+  views           Int         @default(0)
+  likes           Int         @default(0)
+  
+  // Status
+  isPublished     Boolean     @default(false)
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  @@index([slug])
+  @@index([category])
+  @@index([isPublished])
+}
+
+// Newsletter Subscriber
+model NewsletterSubscriber {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  
+  // Preferences
+  interests     String[]  // PRODUCTOS, RECETAS, PROMOS, NOVEDADES
+  frequency     String    @default("WEEKLY") // DAILY, WEEKLY, MONTHLY
+  
+  // Status
+  isActive      Boolean   @default(true)
+  confirmedAt   DateTime?
+  unsubscribedAt DateTime?
+  
+  // Tracking
+  lastEmailAt   DateTime?
+  openCount     Int       @default(0)
+  clickCount    Int       @default(0)
+  
+  customerId    String?   // Link to customer if exists
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@index([email])
+  @@index([isActive])
+}
+
+// Social Media Post Suggestions
+model SocialPost {
+  id            String    @id @default(uuid())
+  
+  platform      String    // INSTAGRAM, FACEBOOK, TWITTER, LINKEDIN
+  content       String    @db.Text
+  hashtags      String[]
+  
+  // Media suggestions
+  imagePrompt   String?   @db.Text
+  suggestedTime DateTime?
+  
+  // Source
+  blogPostId    String?
+  recipeId      String?
+  productId     String?
+  
+  // Status
+  status        String    @default("PENDING") // PENDING, APPROVED, POSTED, REJECTED
+  postedAt      DateTime?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@index([platform])
+  @@index([status])
+}
+
+// ===========================================
+// LOGISTICS & ROUTING (PHASE 6)
+// ===========================================
+
+enum VehicleStatus {
+  AVAILABLE
+  IN_ROUTE
+  MAINTENANCE
+  INACTIVE
+}
+
+enum RouteStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum DeliveryStopStatus {
+  PENDING
+  IN_PROGRESS
+  DELIVERED
+  FAILED
+  SKIPPED
+}
+
+// Vehicle/Fleet
+model Vehicle {
+  id            String        @id @default(uuid())
+  plate         String        @unique  // Patente
+  name          String                 // Nombre/alias del vehículo
+  type          String        @default("CAMION") // CAMION, UTILITARIO, MOTO
+  
+  // Capacity
+  maxWeight     Decimal?      @db.Decimal(10, 2) // kg
+  maxVolume     Decimal?      @db.Decimal(10, 2) // m3
+  maxPackages   Int?
+  
+  // Current status
+  status        VehicleStatus @default(AVAILABLE)
+  currentLat    Decimal?      @db.Decimal(10, 7)
+  currentLng    Decimal?      @db.Decimal(10, 7)
+  lastLocationAt DateTime?
+  
+  // Driver info
+  driverId      String?
+  driverName    String?
+  driverPhone   String?
+  
+  // Relations
+  routes        DeliveryRoute[]
+  locations     VehicleLocation[]
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  @@index([status])
+  @@index([plate])
+}
+
+// Delivery Zones
+model DeliveryZone {
+  id            String    @id @default(uuid())
+  name          String    @unique
+  code          String    @unique  // Código corto (ej: CABA-N, GBA-S)
+  description   String?
+  
+  // Geographic bounds (simplified rectangle)
+  minLat        Decimal   @db.Decimal(10, 7)
+  maxLat        Decimal   @db.Decimal(10, 7)
+  minLng        Decimal   @db.Decimal(10, 7)
+  maxLng        Decimal   @db.Decimal(10, 7)
+  
+  // Polygon for precise boundary (GeoJSON format)
+  polygon       Json?
+  
+  // Delivery settings
+  deliveryDays  String[]  // ['LUN', 'MIE', 'VIE']
+  deliveryFee   Decimal?  @db.Decimal(10, 2)
+  minOrderValue Decimal?  @db.Decimal(10, 2)
+  
+  // Assignment
+  defaultVehicleId String?
+  
+  isActive      Boolean   @default(true)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@index([code])
+  @@index([isActive])
+}
+
+// Delivery Route
+model DeliveryRoute {
+  id            String      @id @default(uuid())
+  code          String      @unique  // Auto-generated: RUTA-2024-001
+  
+  // Dates
+  routeDate     DateTime
+  plannedStart  DateTime?
+  plannedEnd    DateTime?
+  actualStart   DateTime?
+  actualEnd     DateTime?
+  
+  // Vehicle assignment
+  vehicleId     String?
+  vehicle       Vehicle?    @relation(fields: [vehicleId], references: [id])
+  driverId      String?
+  driverName    String?
+  
+  // Status
+  status        RouteStatus @default(PLANNED)
+  
+  // Load summary
+  totalWeight   Decimal?    @db.Decimal(10, 2)
+  totalPackages Int?
+  totalStops    Int         @default(0)
+  completedStops Int        @default(0)
+  
+  // Optimization
+  totalDistance Decimal?    @db.Decimal(10, 2) // km
+  estimatedDuration Int?    // minutes
+  optimizedOrder String[]   // Order of stop IDs after optimization
+  
+  // Relations
+  stops         DeliveryStop[]
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  @@index([routeDate])
+  @@index([status])
+  @@index([vehicleId])
+}
+
+// Individual delivery stop
+model DeliveryStop {
+  id            String            @id @default(uuid())
+  
+  routeId       String
+  route         DeliveryRoute     @relation(fields: [routeId], references: [id])
+  
+  // Order info
+  saleId        String?
+  remitId       String?
+  
+  // Customer info
+  customerId    String?
+  customerName  String
+  address       String
+  addressNotes  String?
+  phone         String?
+  
+  // Location
+  lat           Decimal           @db.Decimal(10, 7)
+  lng           Decimal           @db.Decimal(10, 7)
+  
+  // Sequence
+  sequence      Int               // Order in route (1, 2, 3...)
+  
+  // Status
+  status        DeliveryStopStatus @default(PENDING)
+  
+  // Timing
+  estimatedArrival DateTime?
+  actualArrival DateTime?
+  completedAt   DateTime?
+  
+  // Proof of Delivery
+  signature     String?           // Base64 signature image
+  photos        String[]          // Array of photo URLs
+  receivedBy    String?           // Name of person who received
+  deliveryNotes String?
+  
+  // Failure tracking
+  failureReason String?
+  
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  
+  @@index([routeId])
+  @@index([status])
+  @@index([saleId])
+}
+
+// Vehicle location tracking
+model VehicleLocation {
+  id            String    @id @default(uuid())
+  
+  vehicleId     String
+  vehicle       Vehicle   @relation(fields: [vehicleId], references: [id])
+  
+  lat           Decimal   @db.Decimal(10, 7)
+  lng           Decimal   @db.Decimal(10, 7)
+  speed         Decimal?  @db.Decimal(5, 2) // km/h
+  heading       Int?      // degrees 0-360
+  accuracy      Decimal?  @db.Decimal(6, 2) // meters
+  
+  // Context
+  routeId       String?
+  eventType     String    @default("TRACKING") // TRACKING, STOP, START, DELIVERY
+  
+  recordedAt    DateTime  @default(now())
+  
+  @@index([vehicleId])
+  @@index([recordedAt])
+  @@index([routeId])
+}

@@ -1,0 +1,23 @@
+graph LR
+    subgraph Host[Host VPS (Linux)]
+        subgraph DockerNetwork[Red Docker: trento_net]
+            Proxy[Contenedor Traefik\nPuerto 80/443]
+            API[Backend API\nNode.js]
+            Web[Frontend\nNext.js]
+            DB[PostgreSQL 16]
+            Redis[Redis 7]
+        end
+        
+        Volume1[(postgres_data)]
+        Volume2[(uploads_data)]
+    end
+
+    Internet -- HTTPS --> Proxy
+    Proxy -- Ruta /api --> API
+    Proxy -- Ruta / --> Web
+    
+    API -- TCP 5432 --> DB
+    API -- TCP 6379 --> Redis
+    
+    DB -- Montaje --> Volume1
+    API -- Montaje --> Volume2

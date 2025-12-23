@@ -1,0 +1,338 @@
+time="2025-12-22T12:21:19Z" level=warning msg="/home/ec2-user/trento_core/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Image trento_core-backend Building 
+ Image trento_core-frontend Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 1.03kB done
+#1 DONE 0.0s
+
+#2 [frontend internal] load build definition from Dockerfile
+#2 transferring dockerfile: 693B done
+#2 DONE 0.1s
+
+#3 [backend internal] load build definition from Dockerfile
+#3 transferring dockerfile: 984B done
+#3 DONE 0.1s
+
+#4 [frontend internal] load metadata for docker.io/library/node:18-slim
+#4 DONE 0.5s
+
+#5 [frontend internal] load .dockerignore
+#5 transferring context: 143B done
+#5 DONE 0.1s
+
+#6 [backend internal] load .dockerignore
+#6 transferring context: 177B done
+#6 DONE 0.1s
+
+#7 [frontend runner 1/5] FROM docker.io/library/node:18-slim@sha256:f9ab18e354e6855ae56ef2b290dd225c1e51a564f87584b9bd21dd651838830e
+#7 DONE 0.0s
+
+#8 [backend internal] load build context
+#8 DONE 0.0s
+
+#9 [frontend runner 2/5] WORKDIR /app
+#9 CACHED
+
+#10 [frontend internal] load build context
+#10 transferring context: 16.82kB 0.0s done
+#10 DONE 0.1s
+
+#7 [backend runner 1/5] FROM docker.io/library/node:18-slim@sha256:f9ab18e354e6855ae56ef2b290dd225c1e51a564f87584b9bd21dd651838830e
+#7 CACHED
+
+#8 [backend internal] load build context
+#8 transferring context: 61.40kB 0.1s done
+#8 DONE 0.1s
+
+#11 [frontend builder 3/6] COPY package*.json ./
+#11 DONE 0.1s
+
+#12 [backend builder 2/9] RUN apt-get update -y && apt-get install -y openssl
+#12 0.759 Get:1 http://deb.debian.org/debian bookworm InRelease [151 kB]
+#12 0.774 Get:2 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+#12 0.775 Get:3 http://deb.debian.org/debian-security bookworm-security InRelease [48.0 kB]
+#12 0.862 Get:4 http://deb.debian.org/debian bookworm/main amd64 Packages [8791 kB]
+#12 0.939 Get:5 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [6924 B]
+#12 0.974 Get:6 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [290 kB]
+#12 1.975 Fetched 9342 kB in 1s (7570 kB/s)
+#12 1.975 Reading package lists...
+#12 2.694 Reading package lists...
+#12 3.422 Building dependency tree...
+#12 3.594 Reading state information...
+#12 3.782 The following additional packages will be installed:
+#12 3.783   libssl3
+#12 3.784 Suggested packages:
+#12 3.784   ca-certificates
+#12 3.804 The following NEW packages will be installed:
+#12 3.804   libssl3 openssl
+#12 3.834 0 upgraded, 2 newly installed, 0 to remove and 17 not upgraded.
+#12 3.834 Need to get 3463 kB of archives.
+#12 3.834 After this operation, 8524 kB of additional disk space will be used.
+#12 3.834 Get:1 http://deb.debian.org/debian-security bookworm-security/main amd64 libssl3 amd64 3.0.17-1~deb12u3 [2028 kB]
+#12 3.857 Get:2 http://deb.debian.org/debian-security bookworm-security/main amd64 openssl amd64 3.0.17-1~deb12u3 [1434 kB]
+#12 4.095 debconf: delaying package configuration, since apt-utils is not installed
+#12 4.128 Fetched 3463 kB in 0s (69.7 MB/s)
+#12 4.176 Selecting previously unselected package libssl3:amd64.
+#12 4.176 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 6089 files and directories currently installed.)
+#12 4.246 Preparing to unpack .../libssl3_3.0.17-1~deb12u3_amd64.deb ...
+#12 4.257 Unpacking libssl3:amd64 (3.0.17-1~deb12u3) ...
+#12 4.478 Selecting previously unselected package openssl.
+#12 4.478 Preparing to unpack .../openssl_3.0.17-1~deb12u3_amd64.deb ...
+#12 4.484 Unpacking openssl (3.0.17-1~deb12u3) ...
+#12 4.646 Setting up libssl3:amd64 (3.0.17-1~deb12u3) ...
+#12 4.668 Setting up openssl (3.0.17-1~deb12u3) ...
+#12 4.683 Processing triggers for libc-bin (2.36-9+deb12u10) ...
+#12 DONE 4.9s
+
+#13 [frontend builder 4/6] RUN npm install
+#13 ...
+
+#14 [backend builder 3/9] WORKDIR /app
+#14 DONE 0.1s
+
+#15 [backend builder 4/9] COPY package*.json ./
+#15 DONE 0.1s
+
+#16 [backend builder 5/9] COPY prisma ./prisma/
+#16 DONE 0.1s
+
+#17 [backend builder 6/9] RUN npm install
+#17 12.31 npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+#17 14.92 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#17 15.13 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#17 15.13 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#17 15.30 npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+#17 67.78 
+#17 67.78 added 919 packages, and audited 920 packages in 1m
+#17 67.78 
+#17 67.78 136 packages are looking for funding
+#17 67.78   run `npm fund` for details
+#17 67.91 
+#17 67.91 42 vulnerabilities (5 low, 1 moderate, 36 high)
+#17 67.91 
+#17 67.91 To address issues that do not require attention, run:
+#17 67.91   npm audit fix
+#17 67.91 
+#17 67.91 To address all issues (including breaking changes), run:
+#17 67.91   npm audit fix --force
+#17 67.91 
+#17 67.91 Run `npm audit` for details.
+#17 67.91 npm notice
+#17 67.91 npm notice New major version of npm available! 10.8.2 -> 11.7.0
+#17 67.91 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.7.0
+#17 67.91 npm notice To update run: npm install -g npm@11.7.0
+#17 67.91 npm notice
+#17 DONE 69.1s
+
+#13 [frontend builder 4/6] RUN npm install
+#13 ...
+
+#18 [backend builder 7/9] COPY . .
+#18 DONE 0.9s
+
+#13 [frontend builder 4/6] RUN npm install
+#13 75.10 npm warn deprecated next@14.2.0: This version has a security vulnerability. Please upgrade to a patched version. See https://nextjs.org/blog/security-update-2025-12-11 for more details.
+#13 75.58 
+#13 75.58 added 436 packages, and audited 437 packages in 1m
+#13 75.58 
+#13 75.58 148 packages are looking for funding
+#13 75.58   run `npm fund` for details
+#13 75.75 
+#13 75.75 4 vulnerabilities (3 high, 1 critical)
+#13 75.75 
+#13 75.75 To address all issues (including breaking changes), run:
+#13 75.75   npm audit fix --force
+#13 75.75 
+#13 75.75 Run `npm audit` for details.
+#13 75.75 npm notice
+#13 75.75 npm notice New major version of npm available! 10.8.2 -> 11.7.0
+#13 75.75 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.7.0
+#13 75.75 npm notice To update run: npm install -g npm@11.7.0
+#13 75.75 npm notice
+#13 DONE 75.9s
+
+#19 [backend builder 8/9] RUN npx prisma generate
+#19 ...
+
+#20 [frontend builder 5/6] COPY . .
+#20 DONE 0.2s
+
+#21 [frontend builder 6/6] RUN npm run build
+#21 0.401 
+#21 0.401 > trento-frontend@0.1.0 build
+#21 0.401 > next build
+#21 0.401 
+#21 1.442   ▲ Next.js 14.2.0
+#21 1.443 
+#21 1.462    Creating an optimized production build ...
+#21 ...
+
+#19 [backend builder 8/9] RUN npx prisma generate
+#19 2.341 Prisma schema loaded from prisma/schema.prisma
+#19 4.058 
+#19 4.058 ✔ Generated Prisma Client (v5.22.0) to ./node_modules/@prisma/client in 879ms
+#19 4.058 
+#19 4.058 Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+#19 4.058 
+#19 4.058 Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+#19 4.058 
+#19 DONE 4.3s
+
+#22 [backend builder 9/9] RUN npm run build
+#22 0.566 
+#22 0.566 > trento-backend@0.0.1 build
+#22 0.566 > nest build
+#22 0.566 
+#22 DONE 20.9s
+
+#21 [frontend builder 6/6] RUN npm run build
+#21 ...
+
+#23 [backend stage-1 4/7] COPY --from=builder /app/dist ./dist
+#23 DONE 0.4s
+
+#21 [frontend builder 6/6] RUN npm run build
+#21 38.32  ✓ Compiled successfully
+#21 38.33    Linting and checking validity of types ...
+#21 50.96    Collecting page data ...
+#21 53.44    Generating static pages (0/58) ...
+#21 53.68 Sitemap generation failed: TypeError: fetch failed
+#21 53.68     at node:internal/deps/undici/undici:12637:11
+#21 53.68     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+#21 53.68     at async u (/app/.next/server/app/sitemap.xml/route.js:1:586)
+#21 53.68     at async d (/app/.next/server/app/sitemap.xml/route.js:1:783)
+#21 53.68     at async b (/app/.next/server/app/sitemap.xml/route.js:1:1654)
+#21 53.68     at async /app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:34801
+#21 53.68     at async eS.execute (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:25910)
+#21 53.68     at async eS.handle (/app/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:6:36055)
+#21 53.68     at async exportAppRoute (/app/node_modules/next/dist/export/routes/app-route.js:77:26)
+#21 53.68     at async exportPageImpl (/app/node_modules/next/dist/export/worker.js:175:20) {
+#21 53.68   cause: Error: getaddrinfo ENOTFOUND trento_api
+#21 53.68       at GetAddrInfoReqWrap.onlookup [as oncomplete] (node:dns:107:26)
+#21 53.68       at GetAddrInfoReqWrap.callbackTrampoline (node:internal/async_hooks:128:17) {
+#21 53.68     errno: -3008,
+#21 53.68     code: 'ENOTFOUND',
+#21 53.68     syscall: 'getaddrinfo',
+#21 53.68     hostname: 'trento_api'
+#21 53.68   }
+#21 53.68 }
+#21 54.61    Generating static pages (14/58) 
+#21 55.43    Generating static pages (28/58) 
+#21 56.16    Generating static pages (43/58) 
+#21 57.43  ✓ Generating static pages (58/58)
+#21 58.40    Finalizing page optimization ...
+#21 58.40    Collecting build traces ...
+#21 65.54 
+#21 65.55 Route (app)                              Size     First Load JS
+#21 65.55 ┌ ○ /                                    4.85 kB         103 kB
+#21 65.55 ├ ○ /_not-found                          879 B            88 kB
+#21 65.55 ├ ○ /admin-login                         1.54 kB        92.4 kB
+#21 65.55 ├ ○ /admin/distribution                  3.09 kB          94 kB
+#21 65.55 ├ ○ /admin/marketing                     2.06 kB        92.9 kB
+#21 65.55 ├ ○ /admin/sales                         2.3 kB         93.2 kB
+#21 65.55 ├ ○ /admin/settings/logs                 2.15 kB        99.9 kB
+#21 65.55 ├ ○ /admin/warehouses                    2.98 kB         101 kB
+#21 65.55 ├ ○ /ai-analytics                        9.54 kB         104 kB
+#21 65.55 ├ ○ /audit                               5.67 kB         103 kB
+#21 65.55 ├ ○ /billing                             7.17 kB         105 kB
+#21 65.55 ├ ○ /blog                                13.4 kB         111 kB
+#21 65.55 ├ ○ /bulk-order                          3.31 kB        94.2 kB
+#21 65.55 ├ ○ /catalog                             4.29 kB         102 kB
+#21 65.55 ├ ○ /checkout                            6.73 kB         104 kB
+#21 65.55 ├ ○ /collections                         2.06 kB        96.1 kB
+#21 65.55 ├ ○ /contacto                            2.39 kB        89.5 kB
+#21 65.55 ├ ○ /coupons                             8.13 kB         102 kB
+#21 65.55 ├ ○ /crm                                 7.88 kB         102 kB
+#21 65.55 ├ ○ /customers                           8.2 kB          106 kB
+#21 65.55 ├ ○ /dashboard                           7.26 kB         208 kB
+#21 65.55 ├ ○ /envios                              2.41 kB        89.6 kB
+#21 65.55 ├ ○ /finance                             13 kB           213 kB
+#21 65.55 ├ ○ /finance/calculator                  7.3 kB          105 kB
+#21 65.55 ├ ○ /finance/conciliation                2.43 kB         100 kB
+#21 65.55 ├ ○ /integrations                        7.5 kB          105 kB
+#21 65.55 ├ ○ /inventory                           10.1 kB         108 kB
+#21 65.55 ├ ○ /inventory/labels                    13.4 kB         104 kB
+#21 65.55 ├ ○ /login                               1.79 kB        99.5 kB
+#21 65.55 ├ ○ /logistics                           9.55 kB         104 kB
+#21 65.55 ├ ○ /marketing                           8.78 kB         106 kB
+#21 65.55 ├ ○ /noticias                            3.12 kB        97.1 kB
+#21 65.55 ├ ƒ /noticias/[id]                       3.25 kB        97.3 kB
+#21 65.55 ├ ƒ /noticias/receta/[id]                3.37 kB        97.4 kB
+#21 65.55 ├ ○ /ofertas                             3.59 kB         101 kB
+#21 65.55 ├ ○ /orders                              11.1 kB         109 kB
+#21 65.55 ├ ○ /pos                                 11.7 kB         109 kB
+#21 65.55 ├ ○ /price-lists                         6.09 kB         103 kB
+#21 65.55 ├ ○ /prices                              6.2 kB          107 kB
+#21 65.55 ├ ƒ /product/[slug]                      3.8 kB         97.8 kB
+#21 65.55 ├ ○ /profile                             3.69 kB        94.6 kB
+#21 65.55 ├ ○ /purchase-orders                     9.78 kB         107 kB
+#21 65.55 ├ ○ /register                            1.8 kB         99.5 kB
+#21 65.55 ├ ○ /reports                             6.1 kB          104 kB
+#21 65.55 ├ ○ /resellers                           4.02 kB          98 kB
+#21 65.55 ├ ○ /settings                            7.64 kB         102 kB
+#21 65.55 ├ ○ /sitemap.xml                         0 B                0 B
+#21 65.55 ├ ○ /suppliers                           6.58 kB         104 kB
+#21 65.55 ├ ○ /terms                               2.6 kB         89.8 kB
+#21 65.55 ├ ○ /users                               6.01 kB         104 kB
+#21 65.55 ├ ○ /wholesale                           6.83 kB         101 kB
+#21 65.55 ├ ○ /wholesale/audit                     6.56 kB         101 kB
+#21 65.55 ├ ○ /wholesale/consignments              7.79 kB         102 kB
+#21 65.55 ├ ○ /wholesale/consignments/new          5.36 kB         102 kB
+#21 65.55 ├ ○ /wholesale/customers                 7.44 kB         101 kB
+#21 65.55 ├ ƒ /wholesale/customers/[id]            8.89 kB         103 kB
+#21 65.55 ├ ○ /wholesale/invoicing                 7.29 kB         101 kB
+#21 65.55 ├ ○ /wholesale/quotations                6.92 kB         101 kB
+#21 65.55 ├ ○ /wholesale/quotations/new            5.51 kB         102 kB
+#21 65.55 └ ○ /wholesale/reports                   6.43 kB         100 kB
+#21 65.55 + First Load JS shared by all            87.2 kB
+#21 65.55   ├ chunks/7023-0a46fd8a30c9d572.js      31.5 kB
+#21 65.55   ├ chunks/fd9d1056-16d742ce613cbbdd.js  53.6 kB
+#21 65.55   └ other shared chunks (total)          2.01 kB
+#21 65.55 
+#21 65.55 
+#21 65.55 ○  (Static)   prerendered as static content
+#21 65.55 ƒ  (Dynamic)  server-rendered on demand
+#21 65.55 
+#21 DONE 65.9s
+
+#24 [frontend runner 3/5] COPY --from=builder /app/public ./public
+#24 DONE 0.1s
+
+#25 [frontend runner 4/5] COPY --from=builder /app/.next/static ./.next/static
+#25 DONE 0.1s
+
+#26 [frontend runner 5/5] COPY --from=builder /app/.next/standalone ./
+#26 DONE 0.3s
+
+#27 [frontend] exporting to image
+#27 exporting layers
+#27 exporting layers 1.6s done
+#27 writing image sha256:378a8ffa0c3c5f5b98aba9d33d0edd25ae355c3949fd1c72aa1a7f13487b93c8 0.0s done
+#27 naming to docker.io/library/trento_core-frontend 0.0s done
+#27 DONE 1.7s
+
+#28 [backend stage-1 5/7] COPY --from=builder /app/node_modules ./node_modules
+#28 ...
+
+#29 [frontend] resolving provenance for metadata file
+#29 DONE 0.1s
+
+#28 [backend stage-1 5/7] COPY --from=builder /app/node_modules ./node_modules
+#28 DONE 2.9s
+
+#30 [backend stage-1 6/7] COPY --from=builder /app/package*.json ./
+#30 DONE 0.4s
+
+#31 [backend stage-1 7/7] COPY --from=builder /app/prisma ./prisma
+#31 DONE 0.1s
+
+#32 [backend] exporting to image
+#32 exporting layers 19.9s done
+#32 writing image sha256:943c6aeb4edd905053b091b9c2e838a0525fa38c4fdeafdfa050aa96348329da done
+#32 naming to docker.io/library/trento_core-backend done
+#32 DONE 19.9s
+
+#33 [backend] resolving provenance for metadata file
+#33 DONE 0.1s
+ Image trento_core-backend Built 
+ Image trento_core-frontend Built 

@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # --- INFRASTRUCTURE ---
+  traefik:
+    image: traefik:v2.10
+    container_name: trento_proxy
+    command:
+      - "--api.insecure=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      # - "8080:8080" # Dashboard disabled for production security
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: trento_db
+    restart: always
+    environment:
+      POSTGRES_USER: trento_user
+      POSTGRES_PASSWORD: strong_password_123
+      POSTGRES_DB: trento_core
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: trento_cache
+    restart: always
+    ports:
+      - "6379:6379"
+
+  # --- APPLICATIONS ---
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: trento_api
+    restart: unless-stopped
+    command: node dist/src/main
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      DATABASE_URL: "postgresql://trento_user:strong_password_123@postgres:5432/trento_core?schema=public"
+      REDIS_HOST: redis
+      NODE_ENV: production
+      PORT: 3000
+      GEMINI_API_KEY: "AIzaSyCXcvBMPM4ZLgUgdp1wIm935qjrobkJgMM"
+      TELEGRAM_BOT_TOKEN: "8522244184:AAHwG0vcn93xpDmCzQV2zfTH5f7hLCuWZXQ"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.trento.local`) || PathPrefix(`/api`)"
+      - "traefik.http.services.backend.loadbalancer.server.port=3000"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    volumes:
+      - uploads_data:/app/uploads
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: trento_web
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    command: node server.js
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=HostRegexp(`{host:.+}`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+    # Note: Volumes removed for production - use built assets inside container
+
+volumes:
+  postgres_data:
+  uploads_data:

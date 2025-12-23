@@ -1,0 +1,114 @@
+# =============================================================================
+# TRENTO CORE - Configuración por Defecto
+# Copiar a config/{nombre_empresa}.yaml y personalizar
+# =============================================================================
+
+empresa:
+  nombre: "Distribuidora Default"
+  razon_social: "Distribuidora Default SA"
+  cuit: "30-12345678-9"
+  direccion: "Av. Principal 123"
+  ciudad: "Buenos Aires"
+  provincia: "Buenos Aires"
+  codigo_postal: "1000"
+  telefono: "+54 11 1234-5678"
+  email: "info@distribuidora.com"
+  web: "https://distribuidora.com"
+
+# Configuración Fiscal AFIP
+fiscal:
+  punto_venta: 1
+  tipo_contribuyente: "responsable_inscripto"
+  tipos_factura:
+    - "A"
+    - "B"
+  ambiente: "testing"  # testing | production
+  certificado_path: "/certs/afip.crt"
+  clave_path: "/certs/afip.key"
+  
+# Branding y UI
+branding:
+  logo_url: "/uploads/logos/logo.png"
+  favicon_url: "/uploads/logos/favicon.ico"
+  colores:
+    primario: "#1a73e8"
+    secundario: "#34a853"
+    acento: "#ea4335"
+    fondo: "#ffffff"
+    texto: "#202124"
+  nombre_comercial: "Distribuidora"
+
+# Módulos habilitados
+modulos:
+  pos: true
+  inventario: true
+  compras: true
+  ventas: true
+  crm: true
+  fidelizacion: true
+  logistica: true
+  blog: true
+  ai:
+    predicciones: true
+    chat: true
+    pricing: true
+    marketing: true
+  whatsapp: false
+  ecommerce: false
+
+# Configuración de negocio
+negocio:
+  moneda: "ARS"
+  iva_default: 21
+  redondeo: 2
+  stock:
+    minimo_alerta: 10
+    seguridad_dias: 7
+  puntos:
+    habilitado: true
+    ratio: 100  # 1 punto cada $100
+    vencimiento_dias: 365
+  delivery:
+    habilitado: true
+    costo_default: 500
+    minimo_gratis: 10000
+
+# Integraciones
+integraciones:
+  mercadolibre:
+    habilitado: false
+    client_id: ""
+    client_secret: ""
+  tiendanube:
+    habilitado: false
+    store_id: ""
+    access_token: ""
+  woocommerce:
+    habilitado: false
+    url: ""
+    consumer_key: ""
+    consumer_secret: ""
+  rappi:
+    habilitado: false
+    api_key: ""
+
+# Notificaciones
+notificaciones:
+  email:
+    habilitado: true
+    from: "noreply@distribuidora.com"
+    smtp_host: "smtp.sendgrid.net"
+    smtp_port: 587
+  whatsapp:
+    habilitado: false
+    provider: "baileys"  # baileys | twilio
+  push:
+    habilitado: false
+
+# Horarios de operación
+horarios:
+  lunes_viernes: "08:00-18:00"
+  sabados: "09:00-13:00"
+  domingos: "cerrado"
+  feriados: "cerrado"
+  zona_horaria: "America/Argentina/Buenos_Aires"

@@ -1,0 +1,9 @@
+
+node_modules
+dist
+.env
+.git
+test_bcrypt.js
+verify_auth.js
+*.spec.ts
+coverage
